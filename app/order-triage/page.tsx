@@ -1828,19 +1828,13 @@ export default function OrderTriagePage() {
               >
                 Order Triage
               </Link>
-<Link
-  href="/roles"
-  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
-  >
-  Roles
-  </Link>
-  <Link
-  href="/users"
-  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
-  >
-  Users
-  </Link>
-  </nav>
+              <Link
+                href="/roles"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
+              >
+                Roles
+              </Link>
+            </nav>
           </div>
           <div className="flex items-center gap-3">
             <button className="px-4 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-md transition-colors">
