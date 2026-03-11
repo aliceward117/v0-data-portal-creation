@@ -15,50 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useUsers } from "@/context/users-context"
-
-type Role = {
-  id: number
-  name: string
-  description: string
-  color: string
-}
+import { useUsers, type RoleType } from "@/context/users-context"
 
 export default function RolesPage() {
-  const { users, getUsersByRole } = useUsers()
+  const { roles, getUsersByRole, updateRole } = useUsers()
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [selectedRole, setSelectedRole] = useState<RoleType | null>(null)
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
 
-  const [roles, setRoles] = useState<Role[]>([
-    {
-      id: 1,
-      name: "Administrator",
-      description: "Full system access with all permissions",
-      color: "bg-[#b2a0d2]",
-    },
-    {
-      id: 2,
-      name: "Data Analyst",
-      description: "Read access to analytics and reports",
-      color: "bg-[#f6d06f]",
-    },
-    {
-      id: 3,
-      name: "Editor",
-      description: "Create and edit content with limited access",
-      color: "bg-[#60aa74]",
-    },
-    {
-      id: 4,
-      name: "Viewer",
-      description: "Read-only access to portal content",
-      color: "bg-[#323132]",
-    },
-  ])
-
-  const openEditDialog = (role: Role) => {
+  const openEditDialog = (role: RoleType) => {
     setSelectedRole(role)
     setEditName(role.name)
     setEditDescription(role.description)
@@ -67,13 +33,7 @@ export default function RolesPage() {
 
   const handleSaveRole = () => {
     if (selectedRole) {
-      setRoles(prevRoles =>
-        prevRoles.map(role =>
-          role.id === selectedRole.id
-            ? { ...role, name: editName, description: editDescription }
-            : role
-        )
-      )
+      updateRole(selectedRole.id, editName, editDescription)
     }
     setShowEditDialog(false)
   }

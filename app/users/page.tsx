@@ -30,7 +30,7 @@ import {
 import { useUsers, type UserType } from "@/context/users-context"
 
 export default function UsersPage() {
-  const { users, setUsers, getRoleColor } = useUsers()
+  const { users, setUsers, roles, getRoleColor } = useUsers()
   const [showRoleDialog, setShowRoleDialog] = useState(false)
   const [showProfileDialog, setShowProfileDialog] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
@@ -70,33 +70,6 @@ export default function UsersPage() {
       .join("")
       .toUpperCase()
   }
-
-  const roles = [
-    {
-      id: 1,
-      name: "Administrator",
-      description: "Full system access with all permissions",
-      color: "bg-[#b2a0d2]",
-    },
-    {
-      id: 2,
-      name: "Data Analyst",
-      description: "Read access to analytics and reports",
-      color: "bg-[#f6d06f]",
-    },
-    {
-      id: 3,
-      name: "Editor",
-      description: "Create and edit content with limited access",
-      color: "bg-[#60aa74]",
-    },
-    {
-      id: 4,
-      name: "Viewer",
-      description: "Read-only access to portal content",
-      color: "bg-[#323132]",
-    },
-  ]
 
   return (
     <div className="min-h-screen bg-background">
