@@ -76,8 +76,23 @@ export default function PricingCommunicationPage() {
     sentDate: Date
     sentBy: string
     recipientCount: number
+    recipients: string[] // Array of email addresses
     subject: string
     status: "success" | "failed"
+  }
+
+  // Helper to generate sample email addresses
+  const generateSampleEmails = (count: number, prefix: string): string[] => {
+    const domains = ["gmail.com", "outlook.com", "company.co.uk", "business.com", "email.org"]
+    const firstNames = ["john", "jane", "mike", "sarah", "david", "emma", "chris", "lisa", "tom", "anna"]
+    const lastNames = ["smith", "jones", "brown", "wilson", "taylor", "davies", "evans", "thomas", "johnson", "roberts"]
+    
+    return Array.from({ length: count }, (_, i) => {
+      const firstName = firstNames[i % firstNames.length]
+      const lastName = lastNames[Math.floor(i / firstNames.length) % lastNames.length]
+      const domain = domains[i % domains.length]
+      return `${firstName}.${lastName}${i > 9 ? i : ""}@${domain}`
+    })
   }
 
   const [emailHistory, setEmailHistory] = useState<EmailHistoryItem[]>([
@@ -86,6 +101,7 @@ export default function PricingCommunicationPage() {
       sentDate: new Date("2026-03-10T14:30:00"),
       sentBy: "Alice Johnson",
       recipientCount: 156,
+      recipients: generateSampleEmails(156, "march"),
       subject: "March 2026 Pricing Updates",
       status: "success",
     },
@@ -94,6 +110,7 @@ export default function PricingCommunicationPage() {
       sentDate: new Date("2026-03-05T09:15:00"),
       sentBy: "Bob Smith",
       recipientCount: 89,
+      recipients: generateSampleEmails(89, "q1"),
       subject: "Q1 Price Adjustments",
       status: "success",
     },
@@ -102,6 +119,7 @@ export default function PricingCommunicationPage() {
       sentDate: new Date("2026-02-28T16:45:00"),
       sentBy: "Alice Johnson",
       recipientCount: 234,
+      recipients: generateSampleEmails(234, "feb"),
       subject: "February Pricing Communication",
       status: "success",
     },
@@ -110,6 +128,7 @@ export default function PricingCommunicationPage() {
       sentDate: new Date("2026-02-15T11:00:00"),
       sentBy: "Carol Williams",
       recipientCount: 45,
+      recipients: generateSampleEmails(45, "special"),
       subject: "Special Customer Pricing",
       status: "success",
     },
@@ -127,19 +146,21 @@ export default function PricingCommunicationPage() {
   }
 
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
-    const headers = ["Date", "Time", "Sent By", "Recipients", "Subject", "Status"]
-    const row = [
+    const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
+    
+    // Create one row per recipient email address
+    const rows = item.recipients.map(email => [
       item.sentDate.toLocaleDateString('en-GB'),
       item.sentDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
       item.sentBy,
-      item.recipientCount.toString(),
+      email,
       item.subject,
       item.status,
-    ]
+    ])
     
     const csvContent = [
       headers.join(","),
-      row.map(cell => `"${cell}"`).join(",")
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
     ].join("\n")
     
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
