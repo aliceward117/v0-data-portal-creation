@@ -397,6 +397,10 @@ Albion Pricing Team
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="email" className="gap-2">
+                <Mail className="h-4 w-4" />
+                Email Integration
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload">
@@ -749,6 +753,113 @@ Albion Pricing Team
                     <p>Last updated: {ingestedData[ingestedData.length - 1]?.ingestedAt.toLocaleString()}</p>
                   </div>
                 </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="email">
+              {/* Email Integration Section */}
+              {ingestedData.length === 0 ? (
+                <Card className="p-12">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="mb-4 p-4 rounded-full bg-muted">
+                      <Mail className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      No Data Available for Email
+                    </h3>
+                    <p className="text-muted-foreground max-w-md mb-6">
+                      Upload and ingest pricing data first before sending pricing communication emails.
+                    </p>
+                  </div>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">
+                      Compose Pricing Email
+                    </h3>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="email-recipient">Recipient Email</Label>
+                        <Input
+                          id="email-recipient"
+                          type="email"
+                          placeholder="customer@example.com"
+                          value={emailRecipient}
+                          onChange={(e) => setEmailRecipient(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="email-subject">Subject</Label>
+                        <Input
+                          id="email-subject"
+                          value={emailSubject}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="email-message">Custom Message</Label>
+                        <Textarea
+                          id="email-message"
+                          rows={3}
+                          value={emailMessage}
+                          onChange={(e) => setEmailMessage(e.target.value)}
+                          placeholder="Add a personal message to the email..."
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        Email Preview
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {ingestedData.length} pricing items will be included
+                      </p>
+                    </div>
+                    
+                    <div className="border rounded-lg p-4 bg-muted/30 mb-4">
+                      <div className="mb-3 pb-3 border-b">
+                        <p className="text-sm"><strong>To:</strong> {emailRecipient || "recipient@example.com"}</p>
+                        <p className="text-sm"><strong>Subject:</strong> {emailSubject}</p>
+                      </div>
+                      <pre className="text-sm whitespace-pre-wrap font-mono text-foreground/80 max-h-80 overflow-y-auto">
+                        {generateEmailPreview()}
+                      </pre>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                      {emailSent ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle className="h-5 w-5" />
+                          <span>Email sent successfully to {emailRecipient}</span>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleSendEmail}
+                          disabled={!emailRecipient || isSending}
+                          className="gap-2"
+                        >
+                          {isSending ? (
+                            <>
+                              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4" />
+                              Send Pricing Email
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </div>
               )}
             </TabsContent>
           </Tabs>
