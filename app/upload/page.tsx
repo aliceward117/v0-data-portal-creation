@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
@@ -644,22 +644,39 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
-              {/* Empty State - No approved data */}
+              {/* Mailchimp Integration Option */}
               {(!dataApproved || ingestedData.length === 0) && (
-                <Card className="p-12">
+                <Card className="p-8">
                   <div className="flex flex-col items-center justify-center text-center">
-                    <div className="mb-6 p-4 rounded-full bg-muted">
-                      <Mail className="h-10 w-10 text-muted-foreground" />
+                    <div className="mb-6 p-4 rounded-full bg-[#FFE01B]/10">
+                      <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="#FFE01B"/>
+                      </svg>
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      No approved pricing data
+                      Send Pricing Data via Mailchimp
                     </h3>
-                    <p className="text-muted-foreground mb-6 max-w-sm">
-                      Upload and approve pricing data before sending email communications.
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                      First upload and approve your pricing data, then use Mailchimp to send professional email campaigns to your customers.
                     </p>
-                    <Button onClick={() => setActiveSection("upload")}>
-                      Go to Upload Data
-                    </Button>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <Button onClick={() => setActiveSection("upload")} variant="outline">
+                        Go to Upload Data
+                      </Button>
+                      <a 
+                        href="https://mailchimp.com/features/email/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <Button className="gap-2">
+                          <ExternalLink className="h-4 w-4" />
+                          Open Mailchimp
+                        </Button>
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Connect your Mailchimp account to automate pricing communications
+                    </p>
                   </div>
                 </Card>
               )}
