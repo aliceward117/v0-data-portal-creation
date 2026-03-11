@@ -42,13 +42,27 @@ type PricingItem = {
 
 type ActiveSection = "upload" | "email"
 
+// Sample pricing data for demonstration
+const samplePricingData: PricingItem[] = [
+  { id: "1", code: "ALB-001", description: "Premium Steel Pipe 50mm", unit: "M", category: "Pipes & Fittings", price: 24.50, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "2", code: "ALB-002", description: "Copper Fitting 15mm Elbow", unit: "EA", category: "Pipes & Fittings", price: 3.75, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "3", code: "ALB-003", description: "Industrial Valve 25mm", unit: "EA", category: "Valves", price: 45.90, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "4", code: "ALB-004", description: "Pressure Gauge 0-10 Bar", unit: "EA", category: "Instrumentation", price: 67.25, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "5", code: "ALB-005", description: "HDPE Pipe 100mm", unit: "M", category: "Pipes & Fittings", price: 18.30, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "6", code: "ALB-006", description: "Ball Valve 50mm Brass", unit: "EA", category: "Valves", price: 89.00, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "7", code: "ALB-007", description: "Flow Meter Digital 25mm", unit: "EA", category: "Instrumentation", price: 245.00, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "8", code: "ALB-008", description: "Gasket Set 50mm", unit: "SET", category: "Seals & Gaskets", price: 12.50, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "9", code: "ALB-009", description: "Pipe Clamp Heavy Duty 75mm", unit: "EA", category: "Supports", price: 8.95, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "10", code: "ALB-010", description: "Thermal Insulation Wrap 50mm", unit: "M", category: "Insulation", price: 15.75, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+]
+
 export default function PricingCommunicationPage() {
   const [activeSection, setActiveSection] = useState<ActiveSection>("upload")
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
+  const [ingestedData, setIngestedData] = useState<PricingItem[]>(samplePricingData)
   const [isIngesting, setIsIngesting] = useState(false)
-  const [dataApproved, setDataApproved] = useState(false)
+  const [dataApproved, setDataApproved] = useState(true)
   
   // Email state
   const [emailRecipient, setEmailRecipient] = useState("")
