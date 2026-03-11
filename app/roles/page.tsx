@@ -15,14 +15,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useUsers, type RoleType } from "@/context/users-context"
 
+// Available colors for new roles
+const roleColors = [
+  { name: "Lavender", color: "bg-[#b2a0d2]" },
+  { name: "Gold", color: "bg-[#f6d06f]" },
+  { name: "Green", color: "bg-[#60aa74]" },
+  { name: "Charcoal", color: "bg-[#323132]" },
+  { name: "Blue", color: "bg-[#6b9bd2]" },
+  { name: "Coral", color: "bg-[#e07a5f]" },
+  { name: "Teal", color: "bg-[#4a9d9a]" },
+  { name: "Pink", color: "bg-[#d4a5a5]" },
+]
+
 export default function RolesPage() {
-  const { roles, getUsersByRole, updateRole } = useUsers()
+  const { roles, users, getUsersByRole, updateRole, addRole } = useUsers()
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false)
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null)
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
+  
+  // Add role state
+  const [newRoleName, setNewRoleName] = useState("")
+  const [newRoleDescription, setNewRoleDescription] = useState("")
+  const [newRoleColor, setNewRoleColor] = useState(roleColors[4].color)
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
 
   const openEditDialog = (role: RoleType) => {
     setSelectedRole(role)
@@ -36,6 +56,29 @@ export default function RolesPage() {
       updateRole(selectedRole.id, editName, editDescription)
     }
     setShowEditDialog(false)
+  }
+
+  const openAddDialog = () => {
+    setNewRoleName("")
+    setNewRoleDescription("")
+    setNewRoleColor(roleColors[4].color)
+    setSelectedUserIds([])
+    setShowAddDialog(true)
+  }
+
+  const handleAddRole = () => {
+    if (newRoleName.trim()) {
+      addRole(newRoleName, newRoleDescription, newRoleColor, selectedUserIds)
+      setShowAddDialog(false)
+    }
+  }
+
+  const toggleUserSelection = (userId: number) => {
+    setSelectedUserIds(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    )
   }
 
   const getInitials = (name: string) => {
@@ -104,10 +147,10 @@ export default function RolesPage() {
               <h1 className="text-3xl font-bold text-foreground mb-2">Roles & Permissions</h1>
               <p className="text-muted-foreground">Manage user roles and configure access permissions</p>
             </div>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Role
-            </Button>
+<Button className="gap-2" onClick={openAddDialog}>
+                  <Plus className="h-4 w-4" />
+                  Add Role
+                </Button>
           </div>
 
           {/* Search and Filters */}
@@ -237,6 +280,117 @@ export default function RolesPage() {
             </Button>
             <Button onClick={handleSaveRole}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Role Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Role</DialogTitle>
+            <DialogDescription>
+              Create a new role and optionally assign users to it
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            {/* Role Name */}
+            <div className="space-y-2">
+              <Label htmlFor="new-role-name">Role Name</Label>
+              <Input
+                id="new-role-name"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                placeholder="Enter role name"
+              />
+            </div>
+
+            {/* Role Description */}
+            <div className="space-y-2">
+              <Label htmlFor="new-role-description">Description</Label>
+              <Textarea
+                id="new-role-description"
+                value={newRoleDescription}
+                onChange={(e) => setNewRoleDescription(e.target.value)}
+                placeholder="Describe the role's permissions and responsibilities"
+                rows={3}
+              />
+            </div>
+
+            {/* Role Color */}
+            <div className="space-y-2">
+              <Label>Role Color</Label>
+              <div className="flex flex-wrap gap-2">
+                {roleColors.map((rc) => (
+                  <button
+                    key={rc.color}
+                    type="button"
+                    onClick={() => setNewRoleColor(rc.color)}
+                    className={`h-8 w-8 rounded-full ${rc.color} transition-all ${
+                      newRoleColor === rc.color
+                        ? "ring-2 ring-offset-2 ring-accent"
+                        : "hover:scale-110"
+                    }`}
+                    title={rc.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Assign Users */}
+            <div className="space-y-3">
+              <Label>Assign Users (Optional)</Label>
+              <div className="border rounded-lg max-h-48 overflow-y-auto">
+                {users.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No users available
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {users.map(user => (
+                      <div 
+                        key={user.id} 
+                        className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleUserSelection(user.id)}
+                      >
+                        <Checkbox 
+                          checked={selectedUserIds.includes(user.id)}
+                          onCheckedChange={() => toggleUserSelection(user.id)}
+                        />
+                        <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
+                          <span className="text-xs font-medium text-white">
+                            {getInitials(user.name)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Current: {user.role}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedUserIds.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {selectedUserIds.length} user(s) will be assigned to this role
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddRole} disabled={!newRoleName.trim()}>
+              Create Role
             </Button>
           </DialogFooter>
         </DialogContent>

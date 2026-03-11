@@ -28,6 +28,7 @@ type UsersContextType = {
   getUsersByRole: (roleName: string) => UserType[]
   getRoleColor: (roleName: string) => string
   updateRole: (roleId: number, newName: string, newDescription: string) => void
+  addRole: (name: string, description: string, color: string, assignedUserIds: number[]) => void
 }
 
 const initialRoles: RoleType[] = [
@@ -157,8 +158,33 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const addRole = (name: string, description: string, color: string, assignedUserIds: number[]) => {
+    // Generate a new ID
+    const newId = Math.max(...roles.map(r => r.id), 0) + 1
+    
+    // Add the new role
+    const newRole: RoleType = {
+      id: newId,
+      name,
+      description,
+      color,
+    }
+    setRoles(prevRoles => [...prevRoles, newRole])
+    
+    // Assign selected users to the new role
+    if (assignedUserIds.length > 0) {
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          assignedUserIds.includes(user.id)
+            ? { ...user, role: name, roleColor: color }
+            : user
+        )
+      )
+    }
+  }
+
   return (
-    <UsersContext.Provider value={{ users, setUsers, roles, setRoles, getUsersByRole, getRoleColor, updateRole }}>
+    <UsersContext.Provider value={{ users, setUsers, roles, setRoles, getUsersByRole, getRoleColor, updateRole, addRole }}>
       {children}
     </UsersContext.Provider>
   )
