@@ -15,66 +15,46 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useUsers } from "@/context/users-context"
 
 type Role = {
   id: number
   name: string
   description: string
-  userCount: number
   color: string
 }
 
-type UserAssignment = {
-  id: number
-  name: string
-  email: string
-  role: string
-}
-
 export default function RolesPage() {
+  const { users, getUsersByRole } = useUsers()
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
-
-  // Users data to show assignments - matches Users page
-  const usersData: UserAssignment[] = [
-    { id: 1, name: "Alice Johnson", email: "alice.johnson@albion.com", role: "Administrator" },
-    { id: 2, name: "Bob Smith", email: "bob.smith@albion.com", role: "Data Analyst" },
-    { id: 3, name: "Carol Williams", email: "carol.williams@albion.com", role: "Editor" },
-    { id: 4, name: "David Brown", email: "david.brown@albion.com", role: "Viewer" },
-    { id: 5, name: "Emma Davis", email: "emma.davis@albion.com", role: "Data Analyst" },
-    { id: 6, name: "Frank Miller", email: "frank.miller@albion.com", role: "Editor" },
-  ]
 
   const [roles, setRoles] = useState<Role[]>([
     {
       id: 1,
       name: "Administrator",
       description: "Full system access with all permissions",
-      userCount: 1,
-      color: "bg-[#b2a0d2]", // Soft lavender
+      color: "bg-[#b2a0d2]",
     },
     {
       id: 2,
       name: "Data Analyst",
       description: "Read access to analytics and reports",
-      userCount: 2,
-      color: "bg-[#f6d06f]", // Warm gold/yellow
+      color: "bg-[#f6d06f]",
     },
     {
       id: 3,
       name: "Editor",
       description: "Create and edit content with limited access",
-      userCount: 2,
-      color: "bg-[#60aa74]", // System accent color
+      color: "bg-[#60aa74]",
     },
     {
       id: 4,
       name: "Viewer",
       description: "Read-only access to portal content",
-      userCount: 1,
-      color: "bg-[#323132]", // System primary color
+      color: "bg-[#323132]",
     },
   ])
 
@@ -96,10 +76,6 @@ export default function RolesPage() {
       )
     }
     setShowEditDialog(false)
-  }
-
-  const getUsersForRole = (roleName: string) => {
-    return usersData.filter(user => user.role === roleName)
   }
 
   const getInitials = (name: string) => {
@@ -206,7 +182,7 @@ export default function RolesPage() {
                 <p className="text-sm text-muted-foreground mb-4">{role.description}</p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
-                  <span>{role.userCount} users</span>
+                  <span>{getUsersByRole(role.name).length} users</span>
                 </div>
               </div>
             ))}
@@ -261,17 +237,17 @@ export default function RolesPage() {
                 <div className="flex items-center justify-between">
                   <Label>Assigned Users</Label>
                   <span className="text-sm text-muted-foreground">
-                    {getUsersForRole(selectedRole.name).length} users
+                    {getUsersByRole(selectedRole.name).length} users
                   </span>
                 </div>
                 <div className="border rounded-lg max-h-48 overflow-y-auto">
-                  {getUsersForRole(selectedRole.name).length === 0 ? (
+                  {getUsersByRole(selectedRole.name).length === 0 ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">
                       No users assigned to this role
                     </div>
                   ) : (
                     <div className="divide-y">
-                      {getUsersForRole(selectedRole.name).map(user => (
+                      {getUsersByRole(selectedRole.name).map(user => (
                         <div key={user.id} className="flex items-center gap-3 p-3">
                           <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
                             <span className="text-xs font-medium text-white">

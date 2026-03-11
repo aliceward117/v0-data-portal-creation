@@ -27,19 +27,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-
-type UserType = {
-  id: number
-  name: string
-  email: string
-  role: string
-  roleColor: string
-  lastActive: string
-  status: string
-  photo?: string
-}
+import { useUsers, type UserType } from "@/context/users-context"
 
 export default function UsersPage() {
+  const { users, setUsers, getRoleColor } = useUsers()
   const [showRoleDialog, setShowRoleDialog] = useState(false)
   const [showProfileDialog, setShowProfileDialog] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
@@ -106,63 +97,6 @@ export default function UsersPage() {
       color: "bg-[#323132]",
     },
   ]
-
-  const [users, setUsers] = useState<UserType[]>([
-    {
-      id: 1,
-      name: "Alice Johnson",
-      email: "alice.johnson@albion.com",
-      role: "Administrator",
-      roleColor: "bg-[#b2a0d2]",
-      lastActive: "2 hours ago",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Bob Smith",
-      email: "bob.smith@albion.com",
-      role: "Data Analyst",
-      roleColor: "bg-[#f6d06f]",
-      lastActive: "1 day ago",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Carol Williams",
-      email: "carol.williams@albion.com",
-      role: "Editor",
-      roleColor: "bg-[#60aa74]",
-      lastActive: "3 hours ago",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "David Brown",
-      email: "david.brown@albion.com",
-      role: "Viewer",
-      roleColor: "bg-[#323132]",
-      lastActive: "1 week ago",
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      name: "Emma Davis",
-      email: "emma.davis@albion.com",
-      role: "Data Analyst",
-      roleColor: "bg-[#f6d06f]",
-      lastActive: "5 minutes ago",
-      status: "Active",
-    },
-    {
-      id: 6,
-      name: "Frank Miller",
-      email: "frank.miller@albion.com",
-      role: "Editor",
-      roleColor: "bg-[#60aa74]",
-      lastActive: "2 days ago",
-      status: "Active",
-    },
-  ])
 
   return (
     <div className="min-h-screen bg-background">
