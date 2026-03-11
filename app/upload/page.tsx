@@ -32,10 +32,9 @@ type UploadedFile = {
 type PricingItem = {
   id: string
   code: string
-  description: string
-  unit: string
-  category: string
-  price: number
+  currentPrice: number
+  newPrice: number
+  liveDate: string
   sourceFile: string
   ingestedAt: Date
 }
@@ -44,16 +43,16 @@ type ActiveSection = "upload" | "email"
 
 // Sample pricing data for demonstration
 const samplePricingData: PricingItem[] = [
-  { id: "1", code: "ALB-001", description: "Premium Steel Pipe 50mm", unit: "M", category: "Pipes & Fittings", price: 24.50, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "2", code: "ALB-002", description: "Copper Fitting 15mm Elbow", unit: "EA", category: "Pipes & Fittings", price: 3.75, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "3", code: "ALB-003", description: "Industrial Valve 25mm", unit: "EA", category: "Valves", price: 45.90, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "4", code: "ALB-004", description: "Pressure Gauge 0-10 Bar", unit: "EA", category: "Instrumentation", price: 67.25, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "5", code: "ALB-005", description: "HDPE Pipe 100mm", unit: "M", category: "Pipes & Fittings", price: 18.30, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "6", code: "ALB-006", description: "Ball Valve 50mm Brass", unit: "EA", category: "Valves", price: 89.00, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "7", code: "ALB-007", description: "Flow Meter Digital 25mm", unit: "EA", category: "Instrumentation", price: 245.00, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "8", code: "ALB-008", description: "Gasket Set 50mm", unit: "SET", category: "Seals & Gaskets", price: 12.50, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "9", code: "ALB-009", description: "Pipe Clamp Heavy Duty 75mm", unit: "EA", category: "Supports", price: 8.95, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
-  { id: "10", code: "ALB-010", description: "Thermal Insulation Wrap 50mm", unit: "M", category: "Insulation", price: 15.75, sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "1", code: "ALB-001", currentPrice: 22.50, newPrice: 24.50, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "2", code: "ALB-002", currentPrice: 3.50, newPrice: 3.75, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "3", code: "ALB-003", currentPrice: 42.00, newPrice: 45.90, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "4", code: "ALB-004", currentPrice: 65.00, newPrice: 67.25, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "5", code: "ALB-005", currentPrice: 17.50, newPrice: 18.30, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "6", code: "ALB-006", currentPrice: 85.00, newPrice: 89.00, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "7", code: "ALB-007", currentPrice: 235.00, newPrice: 245.00, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "8", code: "ALB-008", currentPrice: 11.50, newPrice: 12.50, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "9", code: "ALB-009", currentPrice: 8.25, newPrice: 8.95, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
+  { id: "10", code: "ALB-010", currentPrice: 14.50, newPrice: 15.75, liveDate: "01/04/2026", sourceFile: "March_2026_Prices.csv", ingestedAt: new Date() },
 ]
 
 export default function PricingCommunicationPage() {
@@ -151,21 +150,20 @@ export default function PricingCommunicationPage() {
       const headers = fullData[0].map(h => h.toLowerCase().trim())
       const rows = fullData.slice(1)
       
-      const codeIdx = headers.findIndex(h => h.includes("code") || h.includes("sku") || h.includes("id"))
-      const descIdx = headers.findIndex(h => h.includes("description") || h.includes("name") || h.includes("product"))
-      const unitIdx = headers.findIndex(h => h.includes("unit") || h.includes("uom"))
-      const categoryIdx = headers.findIndex(h => h.includes("category") || h.includes("type") || h.includes("group"))
-      const priceIdx = headers.findIndex(h => h.includes("price") || h.includes("cost") || h.includes("amount"))
+      // Find column indices (flexible matching)
+      const codeIdx = headers.findIndex(h => h.includes("code") || h.includes("sku") || h.includes("id") || h.includes("product"))
+      const currentPriceIdx = headers.findIndex(h => h.includes("current") && h.includes("price"))
+      const newPriceIdx = headers.findIndex(h => (h.includes("new") && h.includes("price")) || h.includes("price"))
+      const dateIdx = headers.findIndex(h => h.includes("date") || h.includes("live") || h.includes("effective"))
       
       const newItems: PricingItem[] = rows
         .filter(row => row.some(cell => cell.trim()))
         .map((row, index) => ({
           id: crypto.randomUUID(),
           code: codeIdx >= 0 ? row[codeIdx] || `ITEM-${index + 1}` : `ITEM-${index + 1}`,
-          description: descIdx >= 0 ? row[descIdx] || "No description" : row[0] || "No description",
-          unit: unitIdx >= 0 ? row[unitIdx] || "EA" : "EA",
-          category: categoryIdx >= 0 ? row[categoryIdx] || "Uncategorized" : "Uncategorized",
-          price: priceIdx >= 0 ? parseFloat(row[priceIdx]?.replace(/[^0-9.-]/g, "")) || 0 : 0,
+          currentPrice: currentPriceIdx >= 0 ? parseFloat(row[currentPriceIdx]?.replace(/[^0-9.-]/g, "")) || 0 : 0,
+          newPrice: newPriceIdx >= 0 ? parseFloat(row[newPriceIdx]?.replace(/[^0-9.-]/g, "")) || 0 : 0,
+          liveDate: dateIdx >= 0 ? row[dateIdx] || "TBD" : "TBD",
           sourceFile: file.name,
           ingestedAt: new Date(),
         }))
@@ -492,27 +490,19 @@ export default function PricingCommunicationPage() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50">
-                          <TableHead className="font-semibold">Code</TableHead>
-                          <TableHead className="font-semibold">Description</TableHead>
-                          <TableHead className="font-semibold">Unit</TableHead>
-                          <TableHead className="font-semibold">Category</TableHead>
-                          <TableHead className="font-semibold text-right">Price</TableHead>
+                          <TableHead className="font-semibold">Product Code</TableHead>
+                          <TableHead className="font-semibold text-right">Current Price</TableHead>
+                          <TableHead className="font-semibold text-right">New Price</TableHead>
+                          <TableHead className="font-semibold">Date Pricing Goes Live</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {ingestedData.slice(0, 10).map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                            <TableCell>{item.description}</TableCell>
-                            <TableCell>{item.unit}</TableCell>
-                            <TableCell>
-                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
-                                {item.category}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              £{item.price.toFixed(2)}
-                            </TableCell>
+                            <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
+                            <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
+                            <TableCell>{item.liveDate}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -613,27 +603,19 @@ export default function PricingCommunicationPage() {
                         <Table>
                           <TableHeader>
                             <TableRow className="bg-muted/50">
-                              <TableHead className="font-semibold">Code</TableHead>
-                              <TableHead className="font-semibold">Description</TableHead>
-                              <TableHead className="font-semibold">Unit</TableHead>
-                              <TableHead className="font-semibold">Category</TableHead>
-                              <TableHead className="font-semibold text-right">Price</TableHead>
+                              <TableHead className="font-semibold">Product Code</TableHead>
+                              <TableHead className="font-semibold text-right">Current Price</TableHead>
+                              <TableHead className="font-semibold text-right">New Price</TableHead>
+                              <TableHead className="font-semibold">Date Pricing Goes Live</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {ingestedData.slice(0, 10).map((item) => (
                               <TableRow key={item.id}>
                                 <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                                <TableCell className="max-w-xs truncate">{item.description}</TableCell>
-                                <TableCell>{item.unit}</TableCell>
-                                <TableCell>
-                                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
-                                    {item.category}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right font-medium">
-                                  {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
-                                </TableCell>
+                                <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
+                                <TableCell>{item.liveDate}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -741,36 +723,26 @@ export default function PricingCommunicationPage() {
                             Pricing Schedule
                           </h4>
                           
-                          {[...new Set(ingestedData.map(item => item.category))].map(category => (
-                            <div key={category} className="mb-4">
-                              <h5 className="font-medium text-accent mb-2">{category}</h5>
-                              <table className="w-full text-sm border rounded">
-                                <thead className="bg-muted/50">
-                                  <tr>
-                                    <th className="text-left p-2">Code</th>
-                                    <th className="text-left p-2">Description</th>
-                                    <th className="text-left p-2">Unit</th>
-                                    <th className="text-right p-2">Price</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {ingestedData
-                                    .filter(item => item.category === category)
-                                    .slice(0, 5)
-                                    .map((item, idx) => (
-                                      <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/20"}>
-                                        <td className="p-2 font-mono text-xs">{item.code}</td>
-                                        <td className="p-2">{item.description}</td>
-                                        <td className="p-2">{item.unit}</td>
-                                        <td className="p-2 text-right font-medium">
-                                          {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ))}
+                          <table className="w-full text-sm border rounded">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-2">Product Code</th>
+                                <th className="text-right p-2">Current Price</th>
+                                <th className="text-right p-2">New Price</th>
+                                <th className="text-left p-2">Date Pricing Goes Live</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ingestedData.slice(0, 10).map((item, idx) => (
+                                <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/20"}>
+                                  <td className="p-2 font-mono text-xs">{item.code}</td>
+                                  <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                  <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
+                                  <td className="p-2">{item.liveDate}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                         
                         <p className="text-sm text-muted-foreground mb-4">
