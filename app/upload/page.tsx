@@ -294,20 +294,39 @@ export default function UploadPage() {
                   >
                     {getFileIcon(file.name)}
                     <div className="flex-1 min-w-0">
-                      <button
-                        onClick={() => {
-                          if (file.status === "success" && file.previewData) {
-                            setSelectedFileId(selectedFileId === file.id ? null : file.id)
-                          }
-                        }}
-                        className={`font-medium truncate text-left ${
-                          file.status === "success" && file.previewData
-                            ? "text-accent hover:underline cursor-pointer"
-                            : "text-foreground cursor-default"
-                        }`}
-                      >
-                        {file.name}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            if (file.status === "success" && file.previewData) {
+                              setSelectedFileId(selectedFileId === file.id ? null : file.id)
+                            }
+                          }}
+                          className={`font-medium truncate text-left ${
+                            file.status === "success" && file.previewData
+                              ? "text-accent hover:underline cursor-pointer"
+                              : "text-foreground cursor-default"
+                          }`}
+                        >
+                          {file.name}
+                        </button>
+                        {file.status === "uploading" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            Uploading...
+                          </span>
+                        )}
+                        {file.status === "success" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <CheckCircle className="h-3 w-3" />
+                            Uploaded
+                          </span>
+                        )}
+                        {file.status === "error" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <AlertCircle className="h-3 w-3" />
+                            Failed
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {formatFileSize(file.size)}
                         {file.uploadedAt && (
@@ -316,8 +335,11 @@ export default function UploadPage() {
                           </span>
                         )}
                       </p>
+                      {file.status === "success" && (
+                        <p className="text-sm text-green-600 mt-1">File uploaded successfully</p>
+                      )}
                       {file.errorMessage && (
-                        <p className="text-sm text-destructive">{file.errorMessage}</p>
+                        <p className="text-sm text-destructive mt-1">{file.errorMessage}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
