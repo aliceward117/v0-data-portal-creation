@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Eye, FileText, Database, Mail, Send } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
@@ -13,15 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -49,63 +40,32 @@ type PricingItem = {
   ingestedAt: Date
 }
 
-export default function UploadPage() {
+type ActiveSection = "upload" | "email"
+
+export default function PricingCommunicationPage() {
+  const [activeSection, setActiveSection] = useState<ActiveSection>("upload")
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
   const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
   const [isIngesting, setIsIngesting] = useState(false)
+  const [dataApproved, setDataApproved] = useState(false)
   
   // Email state
-  const [showEmailDialog, setShowEmailDialog] = useState(false)
   const [emailRecipient, setEmailRecipient] = useState("")
   const [emailSubject, setEmailSubject] = useState("Updated Pricing Information - Albion")
   const [emailMessage, setEmailMessage] = useState("Please find below our updated pricing information. If you have any questions, please don't hesitate to contact us.")
   const [isSending, setIsSending] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
 
-  const generateEmailPreview = () => {
-    const categories = [...new Set(ingestedData.map(item => item.category))]
-    const itemsByCategory = categories.map(cat => ({
-      category: cat,
-      items: ingestedData.filter(item => item.category === cat)
-    }))
-    
-    return `
-Dear Customer,
-
-${emailMessage}
-
-===========================================
-PRICING SCHEDULE
-===========================================
-
-${itemsByCategory.map(({ category, items }) => `
---- ${category.toUpperCase()} ---
-${items.map(item => `${item.code.padEnd(15)} ${item.description.substring(0, 40).padEnd(42)} ${item.unit.padEnd(8)} £${item.price.toFixed(2)}`).join('\n')}
-`).join('\n')}
-
-===========================================
-
-Total Items: ${ingestedData.length}
-Date: ${new Date().toLocaleDateString('en-GB')}
-
-Kind regards,
-Albion Pricing Team
-    `.trim()
-  }
-
   const handleSendEmail = async () => {
     setIsSending(true)
-    // Simulate email sending
     await new Promise(resolve => setTimeout(resolve, 2000))
     setIsSending(false)
     setEmailSent(true)
     setTimeout(() => {
-      setShowEmailDialog(false)
       setEmailSent(false)
       setEmailRecipient("")
-    }, 2000)
+    }, 3000)
   }
 
   const parseCSV = (text: string): string[][] => {
@@ -136,7 +96,6 @@ Albion Pricing Team
       reader.onload = (e) => {
         const text = e.target?.result as string
         const data = parseCSV(text)
-        // Return only first 10 rows for preview
         resolve(data.slice(0, 10))
       }
       reader.onerror = () => resolve([])
@@ -173,7 +132,6 @@ Albion Pricing Team
       const headers = fullData[0].map(h => h.toLowerCase().trim())
       const rows = fullData.slice(1)
       
-      // Find column indices (flexible matching)
       const codeIdx = headers.findIndex(h => h.includes("code") || h.includes("sku") || h.includes("id"))
       const descIdx = headers.findIndex(h => h.includes("description") || h.includes("name") || h.includes("product"))
       const unitIdx = headers.findIndex(h => h.includes("unit") || h.includes("uom"))
@@ -193,7 +151,6 @@ Albion Pricing Team
           ingestedAt: new Date(),
         }))
       
-      // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       setIngestedData(prev => [...prev, ...newItems])
@@ -211,18 +168,8 @@ Albion Pricing Team
   }
 
   const isValidFileType = (file: File) => {
-    const validTypes = [
-      "text/csv",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/pdf",
-    ]
-    const validExtensions = [".csv", ".xls", ".xlsx", ".doc", ".docx", ".pdf"]
-    const hasValidType = validTypes.includes(file.type)
-    const hasValidExtension = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
-    return hasValidType || hasValidExtension
+    const validExtensions = [".csv"]
+    return validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
   }
 
   const processFiles = useCallback(async (fileList: FileList | null) => {
@@ -240,14 +187,13 @@ Albion Pricing Team
         size: file.size,
         type: file.type,
         status: isValid ? "uploading" : "error",
-        errorMessage: isValid ? undefined : "Invalid file type. Please upload CSV or Excel files only.",
+        errorMessage: isValid ? undefined : "Invalid file type. Please upload CSV files only.",
         file: file,
       }
 
       setFiles((prev) => [...prev, newFile])
 
       if (isValid) {
-        // Parse CSV preview
         if (file.name.toLowerCase().endsWith(".csv")) {
           const previewData = await readFilePreview(file)
           setFiles((prev) =>
@@ -257,7 +203,6 @@ Albion Pricing Team
           )
         }
 
-        // Simulate upload completion and ingest data
         setTimeout(async () => {
           setFiles((prev) =>
             prev.map((f) =>
@@ -267,7 +212,6 @@ Albion Pricing Team
             )
           )
           
-          // Auto-ingest pricing data for CSV files
           if (file.name.toLowerCase().endsWith(".csv")) {
             const uploadedFile: UploadedFile = {
               id: fileId,
@@ -313,13 +257,18 @@ Albion Pricing Team
 
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id))
+    setIngestedData([])
+    setDataApproved(false)
   }
 
-  const getFileIcon = (fileName: string) => {
-    if (fileName.endsWith(".csv")) {
-      return <FileSpreadsheet className="h-8 w-8 text-accent" />
-    }
-    return <FileSpreadsheet className="h-8 w-8 text-accent" />
+  const clearAllData = () => {
+    setFiles([])
+    setIngestedData([])
+    setDataApproved(false)
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n[0]).join("").toUpperCase()
   }
 
   return (
@@ -345,12 +294,12 @@ Albion Pricing Team
               >
                 Order Triage
               </Link>
-<Link
-  href="/upload"
-  className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
-  >
-  Pricing Communication
-  </Link>
+              <Link
+                href="/upload"
+                className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
+              >
+                Pricing Communication
+              </Link>
               <Link
                 href="/roles"
                 className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
@@ -376,328 +325,284 @@ Albion Pricing Team
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Pricing Communication</h1>
-            <p className="text-muted-foreground">
-              Upload pricing data and send pricing communications to customers
-            </p>
-          </div>
-
-          <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="upload" className="gap-2">
-                <Upload className="h-4 w-4" />
-                Upload Data
-                {ingestedData.length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-accent text-white">
-                    {ingestedData.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="email" className="gap-2">
-                <Mail className="h-4 w-4" />
-                Email Communication
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="upload">
-          {/* Upload Area */}
-          <Card className="mb-8">
-            <div
-              className={`p-8 border-2 border-dashed rounded-lg transition-colors ${
-                isDragging
-                  ? "border-accent bg-accent/10"
-                  : "border-border hover:border-accent/50"
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="mb-4 p-4 rounded-full bg-accent/10">
-                  <Upload className="h-8 w-8 text-accent" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Drop your files here
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  or click to browse from your computer
-                </p>
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  multiple
-                  accept=".csv,.xls,.xlsx,.doc,.docx,.pdf"
-                  onChange={handleFileSelect}
-                />
-                <Button asChild>
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    Select Files
-                  </label>
-                </Button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  Supported formats: CSV, Excel, Word, PDF
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Uploaded Files List */}
-          {files.length > 0 && (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Uploaded Files ({files.length})
-              </h3>
-              <div className="space-y-3">
-                {files.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
-                  >
-                    {getFileIcon(file.name)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            if (file.status === "success" && file.previewData) {
-                              setSelectedFileId(selectedFileId === file.id ? null : file.id)
-                            }
-                          }}
-                          className={`font-medium truncate text-left ${
-                            file.status === "success" && file.previewData
-                              ? "text-accent hover:underline cursor-pointer"
-                              : "text-foreground cursor-default"
-                          }`}
-                        >
-                          {file.name}
-                        </button>
-                        {file.status === "uploading" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                            Uploading...
-                          </span>
-                        )}
-                        {file.status === "success" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <CheckCircle className="h-3 w-3" />
-                            Uploaded
-                          </span>
-                        )}
-                        {file.status === "error" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            <AlertCircle className="h-3 w-3" />
-                            Failed
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {formatFileSize(file.size)}
-                        {file.uploadedAt && (
-                          <span className="ml-2">
-                            - Uploaded at {file.uploadedAt.toLocaleTimeString()}
-                          </span>
-                        )}
-                      </p>
-                      {file.status === "success" && (
-                        <p className="text-sm text-green-600 mt-1">File uploaded successfully</p>
-                      )}
-                      {file.errorMessage && (
-                        <p className="text-sm text-destructive mt-1">{file.errorMessage}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {file.status === "uploading" && (
-                        <div className="h-5 w-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                      )}
-                      {file.status === "success" && (
-                        <CheckCircle className="h-5 w-5 text-accent" />
-                      )}
-                      {file.status === "error" && (
-                        <AlertCircle className="h-5 w-5 text-destructive" />
-                      )}
-                      {file.status === "success" && file.previewData && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedFileId(selectedFileId === file.id ? null : file.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">Preview file</span>
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(file.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Remove file</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* File Preview */}
-          {selectedFileId && (() => {
-            const selectedFile = files.find(f => f.id === selectedFileId)
-            if (!selectedFile?.previewData || selectedFile.previewData.length === 0) return null
-            
-            const headers = selectedFile.previewData[0]
-            const rows = selectedFile.previewData.slice(1)
-            
-            return (
-              <Card className="mt-8 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Preview: {selectedFile.name}
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedFileId(null)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close preview</span>
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Showing first {rows.length} rows of data
-                </p>
-                <div className="border rounded-lg overflow-auto max-h-96">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {headers.map((header, index) => (
-                          <TableHead key={index} className="font-semibold whitespace-nowrap">
-                            {header || `Column ${index + 1}`}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {row.map((cell, cellIndex) => (
-                            <TableCell key={cellIndex} className="whitespace-nowrap">
-                              {cell}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-  </Table>
-  </div>
-  </Card>
-  )
-          })()}
-
-          {/* Ingested Data Preview in Upload Tab */}
-          {ingestedData.length > 0 && (
-            <Card className="mt-8 p-6">
-              <div className="flex items-center justify-between mb-4">
+      {/* Main Content with Sidebar */}
+      <div className="flex">
+        {/* Sidebar Submenu */}
+        <aside className="w-64 border-r border-border bg-card min-h-[calc(100vh-73px)]">
+          <div className="p-4">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+              Pricing Communication
+            </h2>
+            <nav className="space-y-1">
+              <button
+                onClick={() => setActiveSection("upload")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  activeSection === "upload"
+                    ? "bg-accent text-white"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <FileUp className="h-5 w-5" />
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Uploaded Data Preview
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {ingestedData.length} items ingested from your uploaded files
+                  <p className="text-sm font-medium">Upload Data</p>
+                  <p className={`text-xs ${activeSection === "upload" ? "text-white/70" : "text-muted-foreground"}`}>
+                    Import CSV pricing files
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  {isIngesting && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                      Processing...
-                    </div>
-                  )}
-                  <Button
-                    onClick={() => setShowEmailDialog(true)}
-                    className="gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Send Pricing Email
-                  </Button>
+              </button>
+              <button
+                onClick={() => setActiveSection("email")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                  activeSection === "email"
+                    ? "bg-accent text-white"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <MessageSquare className="h-5 w-5" />
+                <div>
+                  <p className="text-sm font-medium">Email Communication</p>
+                  <p className={`text-xs ${activeSection === "email" ? "text-white/70" : "text-muted-foreground"}`}>
+                    Send pricing emails
+                  </p>
                 </div>
-              </div>
-              
-              <div className="border rounded-lg overflow-auto max-h-96">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="font-semibold">Code</TableHead>
-                      <TableHead className="font-semibold">Description</TableHead>
-                      <TableHead className="font-semibold">Unit</TableHead>
-                      <TableHead className="font-semibold">Category</TableHead>
-                      <TableHead className="font-semibold text-right">Price</TableHead>
-                      <TableHead className="font-semibold">Source File</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ingestedData.slice(0, 20).map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                        <TableCell className="max-w-xs truncate">{item.description}</TableCell>
-                        <TableCell>{item.unit}</TableCell>
-                        <TableCell>
-                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
-                            {item.category}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{item.sourceFile}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              {ingestedData.length > 20 && (
-                <p className="mt-3 text-sm text-muted-foreground text-center">
-                  Showing first 20 of {ingestedData.length} items. View the Ingested Data tab for full list.
-                </p>
-              )}
-            </Card>
-          )}
-            </TabsContent>
+              </button>
+            </nav>
+          </div>
 
-            <TabsContent value="email">
-              {/* Email Integration Section */}
-              {ingestedData.length === 0 ? (
-                <Card className="p-12">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="mb-4 p-4 rounded-full bg-muted">
-                      <Mail className="h-12 w-12 text-muted-foreground" />
+          {/* Data Status */}
+          {ingestedData.length > 0 && (
+            <div className="p-4 border-t border-border">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">Data Ready</span>
+                </div>
+                <p className="text-xs text-green-700">
+                  {ingestedData.length} pricing items loaded
+                </p>
+                {dataApproved && (
+                  <p className="text-xs text-green-700 mt-1">Data approved for use</p>
+                )}
+              </div>
+            </div>
+          )}
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 p-8">
+          {activeSection === "upload" && (
+            <div className="max-w-4xl">
+              <div className="mb-8">
+                <h1 className="text-2xl font-bold text-foreground mb-2">Upload Pricing Data</h1>
+                <p className="text-muted-foreground">
+                  Upload a CSV file containing your pricing data. The data will be processed and displayed for your approval.
+                </p>
+              </div>
+
+              {/* Empty State - No files uploaded */}
+              {files.length === 0 && ingestedData.length === 0 && (
+                <Card className="p-8">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
+                      isDragging
+                        ? "border-accent bg-accent/5"
+                        : "border-border hover:border-accent/50"
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="mb-6 p-4 rounded-full bg-muted">
+                        <FileUp className="h-10 w-10 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        No pricing data uploaded
+                      </h3>
+                      <p className="text-muted-foreground mb-6 max-w-sm">
+                        Upload a CSV file to get started. Your pricing data will be displayed for review before use.
+                      </p>
+                      <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        accept=".csv"
+                        onChange={handleFileSelect}
+                      />
+                      <Button asChild size="lg">
+                        <label htmlFor="file-upload" className="cursor-pointer gap-2">
+                          <Upload className="h-4 w-4" />
+                          Select CSV File
+                        </label>
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-4">
+                        Supported format: CSV
+                      </p>
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      No Data Available for Email
-                    </h3>
-                    <p className="text-muted-foreground max-w-md mb-6">
-                      Upload and ingest pricing data first before sending pricing communication emails.
-                    </p>
                   </div>
                 </Card>
-              ) : (
+              )}
+
+              {/* File uploaded - Show processing/preview */}
+              {files.length > 0 && (
                 <div className="space-y-6">
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-4">
-                      Compose Pricing Email
+                  {/* File Info */}
+                  <Card className="p-4">
+                    {files.map((file) => (
+                      <div key={file.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileSpreadsheet className="h-8 w-8 text-accent" />
+                          <div>
+                            <p className="font-medium text-foreground">{file.name}</p>
+                            <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {file.status === "uploading" && (
+                            <span className="flex items-center gap-2 text-sm text-amber-600">
+                              <div className="h-4 w-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                              Processing...
+                            </span>
+                          )}
+                          {file.status === "success" && (
+                            <span className="flex items-center gap-1 text-sm text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              Uploaded
+                            </span>
+                          )}
+                          {file.status === "error" && (
+                            <span className="flex items-center gap-1 text-sm text-red-600">
+                              <AlertCircle className="h-4 w-4" />
+                              {file.errorMessage}
+                            </span>
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => removeFile(file.id)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+
+                  {/* Data Preview */}
+                  {isIngesting && (
+                    <Card className="p-8">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-muted-foreground">Processing pricing data...</p>
+                      </div>
+                    </Card>
+                  )}
+
+                  {ingestedData.length > 0 && !isIngesting && (
+                    <Card className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground">Sample Data Preview</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Showing first 10 of {ingestedData.length} items. Review and approve to continue.
+                          </p>
+                        </div>
+                        {!dataApproved && (
+                          <div className="flex gap-2">
+                            <Button variant="outline" onClick={clearAllData}>
+                              Reject
+                            </Button>
+                            <Button onClick={() => setDataApproved(true)}>
+                              Approve Data
+                            </Button>
+                          </div>
+                        )}
+                        {dataApproved && (
+                          <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1 text-sm text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              Data Approved
+                            </span>
+                            <Button variant="outline" size="sm" onClick={clearAllData}>
+                              Clear & Start Over
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border rounded-lg overflow-auto max-h-96">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead className="font-semibold">Code</TableHead>
+                              <TableHead className="font-semibold">Description</TableHead>
+                              <TableHead className="font-semibold">Unit</TableHead>
+                              <TableHead className="font-semibold">Category</TableHead>
+                              <TableHead className="font-semibold text-right">Price</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {ingestedData.slice(0, 10).map((item) => (
+                              <TableRow key={item.id}>
+                                <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                                <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                                <TableCell>{item.unit}</TableCell>
+                                <TableCell>
+                                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                                    {item.category}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSection === "email" && (
+            <div className="max-w-4xl">
+              <div className="mb-8">
+                <h1 className="text-2xl font-bold text-foreground mb-2">Email Communication</h1>
+                <p className="text-muted-foreground">
+                  Compose and send pricing communication emails using your approved pricing data.
+                </p>
+              </div>
+
+              {/* Empty State - No approved data */}
+              {(!dataApproved || ingestedData.length === 0) && (
+                <Card className="p-12">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="mb-6 p-4 rounded-full bg-muted">
+                      <Mail className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      No approved pricing data
                     </h3>
-                    <div className="grid gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="email-recipient">Recipient Email</Label>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                      Upload and approve pricing data before sending email communications.
+                    </p>
+                    <Button onClick={() => setActiveSection("upload")}>
+                      Go to Upload Data
+                    </Button>
+                  </div>
+                </Card>
+              )}
+
+              {/* Email Compose Form */}
+              {dataApproved && ingestedData.length > 0 && (
+                <div className="space-y-6">
+                  {/* Email Form */}
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Compose Email</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="recipient">Recipient Email</Label>
                         <Input
-                          id="email-recipient"
+                          id="recipient"
                           type="email"
                           placeholder="customer@example.com"
                           value={emailRecipient}
@@ -705,110 +610,101 @@ Albion Pricing Team
                         />
                       </div>
                       
-                      <div className="grid gap-2">
-                        <Label htmlFor="email-subject">Subject</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="subject">Subject</Label>
                         <Input
-                          id="email-subject"
+                          id="subject"
                           value={emailSubject}
                           onChange={(e) => setEmailSubject(e.target.value)}
                         />
                       </div>
                       
-                      <div className="grid gap-2">
-                        <Label htmlFor="email-message">Custom Message</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="message">Custom Message</Label>
                         <Textarea
-                          id="email-message"
+                          id="message"
                           rows={3}
                           value={emailMessage}
                           onChange={(e) => setEmailMessage(e.target.value)}
-                          placeholder="Add a personal message to the email..."
                         />
                       </div>
                     </div>
                   </Card>
 
+                  {/* Email Preview */}
                   <Card className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        Email Preview
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {ingestedData.length} pricing items will be included
-                      </p>
+                      <h3 className="text-lg font-semibold text-foreground">Email Preview</h3>
+                      <span className="text-sm text-muted-foreground">
+                        {ingestedData.length} pricing items included
+                      </span>
                     </div>
-                    
-                    {/* Email Header */}
-                    <div className="border rounded-lg overflow-hidden mb-4">
+
+                    <div className="border rounded-lg overflow-hidden">
+                      {/* Email Header */}
                       <div className="bg-muted/50 p-4 border-b">
-                        <div className="grid gap-1 text-sm">
-                          <p><span className="font-medium text-muted-foreground">To:</span> {emailRecipient || "recipient@example.com"}</p>
-                          <p><span className="font-medium text-muted-foreground">Subject:</span> {emailSubject}</p>
-                          <p><span className="font-medium text-muted-foreground">From:</span> pricing@albion.com</p>
-                        </div>
+                        <p className="text-sm"><span className="text-muted-foreground">To:</span> {emailRecipient || "recipient@example.com"}</p>
+                        <p className="text-sm"><span className="text-muted-foreground">Subject:</span> {emailSubject}</p>
+                        <p className="text-sm"><span className="text-muted-foreground">From:</span> pricing@albion.com</p>
                       </div>
-                      
+
                       {/* Email Body */}
-                      <div className="p-6 bg-white max-h-[500px] overflow-y-auto">
-                        <div className="max-w-2xl">
-                          <p className="text-foreground mb-4">Dear Customer,</p>
-                          <p className="text-foreground mb-6">{emailMessage}</p>
+                      <div className="p-6 bg-white max-h-96 overflow-y-auto">
+                        <p className="mb-4">Dear Customer,</p>
+                        <p className="mb-6">{emailMessage}</p>
+                        
+                        <div className="mb-6">
+                          <h4 className="font-semibold mb-4 pb-2 border-b-2 border-accent">
+                            Pricing Schedule
+                          </h4>
                           
-                          <div className="mb-6">
-                            <h4 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b-2 border-accent">
-                              Pricing Schedule
-                            </h4>
-                            
-                            {[...new Set(ingestedData.map(item => item.category))].map(category => (
-                              <div key={category} className="mb-6">
-                                <h5 className="font-medium text-accent mb-3">{category}</h5>
-                                <div className="border rounded-lg overflow-hidden">
-                                  <table className="w-full text-sm">
-                                    <thead className="bg-muted/50">
-                                      <tr>
-                                        <th className="text-left p-2 font-medium">Code</th>
-                                        <th className="text-left p-2 font-medium">Description</th>
-                                        <th className="text-left p-2 font-medium">Unit</th>
-                                        <th className="text-right p-2 font-medium">Price</th>
+                          {[...new Set(ingestedData.map(item => item.category))].map(category => (
+                            <div key={category} className="mb-4">
+                              <h5 className="font-medium text-accent mb-2">{category}</h5>
+                              <table className="w-full text-sm border rounded">
+                                <thead className="bg-muted/50">
+                                  <tr>
+                                    <th className="text-left p-2">Code</th>
+                                    <th className="text-left p-2">Description</th>
+                                    <th className="text-left p-2">Unit</th>
+                                    <th className="text-right p-2">Price</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {ingestedData
+                                    .filter(item => item.category === category)
+                                    .slice(0, 5)
+                                    .map((item, idx) => (
+                                      <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/20"}>
+                                        <td className="p-2 font-mono text-xs">{item.code}</td>
+                                        <td className="p-2">{item.description}</td>
+                                        <td className="p-2">{item.unit}</td>
+                                        <td className="p-2 text-right font-medium">
+                                          {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
+                                        </td>
                                       </tr>
-                                    </thead>
-                                    <tbody>
-                                      {ingestedData
-                                        .filter(item => item.category === category)
-                                        .map((item, idx) => (
-                                          <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/20"}>
-                                            <td className="p-2 font-mono text-xs">{item.code}</td>
-                                            <td className="p-2">{item.description}</td>
-                                            <td className="p-2">{item.unit}</td>
-                                            <td className="p-2 text-right font-medium">
-                                              {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div className="text-sm text-muted-foreground mb-6 p-3 bg-muted/30 rounded">
-                            <p><strong>Total Items:</strong> {ingestedData.length}</p>
-                            <p><strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}</p>
-                          </div>
-                          
-                          <div className="text-foreground">
-                            <p>Kind regards,</p>
-                            <p className="font-medium">Albion Pricing Team</p>
-                          </div>
+                                    ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ))}
                         </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Total Items: {ingestedData.length} | Date: {new Date().toLocaleDateString('en-GB')}
+                        </p>
+                        
+                        <p>Kind regards,</p>
+                        <p className="font-medium">Albion Pricing Team</p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-3">
+                    {/* Send Button */}
+                    <div className="flex items-center justify-end gap-3 mt-4">
                       {emailSent ? (
                         <div className="flex items-center gap-2 text-green-600">
                           <CheckCircle className="h-5 w-5" />
-                          <span>Email sent successfully to {emailRecipient}</span>
+                          <span>Email sent successfully!</span>
                         </div>
                       ) : (
                         <Button
@@ -824,7 +720,7 @@ Albion Pricing Team
                           ) : (
                             <>
                               <Send className="h-4 w-4" />
-                              Send Pricing Email
+                              Send Email
                             </>
                           )}
                         </Button>
@@ -833,110 +729,10 @@ Albion Pricing Team
                   </Card>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </main>
-
-      {/* Email Dialog */}
-      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Send Pricing Email
-            </DialogTitle>
-            <DialogDescription>
-              Preview and send the pricing data as an email to your recipients.
-            </DialogDescription>
-          </DialogHeader>
-
-          {emailSent ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center">
-              <div className="mb-4 p-4 rounded-full bg-green-100">
-                <CheckCircle className="h-12 w-12 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Email Sent Successfully
-              </h3>
-              <p className="text-muted-foreground">
-                The pricing email has been sent to {emailRecipient}
-              </p>
             </div>
-          ) : (
-            <>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="recipient">Recipient Email</Label>
-                  <Input
-                    id="recipient"
-                    type="email"
-                    placeholder="customer@example.com"
-                    value={emailRecipient}
-                    onChange={(e) => setEmailRecipient(e.target.value)}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    value={emailSubject}
-                    onChange={(e) => setEmailSubject(e.target.value)}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="message">Custom Message</Label>
-                  <Textarea
-                    id="message"
-                    rows={3}
-                    value={emailMessage}
-                    onChange={(e) => setEmailMessage(e.target.value)}
-                    placeholder="Add a personal message to the email..."
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label>Email Preview</Label>
-                  <Card className="p-4 bg-muted/30 max-h-80 overflow-y-auto">
-                    <div className="mb-3 pb-3 border-b">
-                      <p className="text-sm"><strong>To:</strong> {emailRecipient || "recipient@example.com"}</p>
-                      <p className="text-sm"><strong>Subject:</strong> {emailSubject}</p>
-                    </div>
-                    <pre className="text-sm whitespace-pre-wrap font-mono text-foreground/80">
-                      {generateEmailPreview()}
-                    </pre>
-                  </Card>
-                </div>
-              </div>
-
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSendEmail}
-                  disabled={!emailRecipient || isSending}
-                  className="gap-2"
-                >
-                  {isSending ? (
-                    <>
-                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Send Email
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </>
           )}
-        </DialogContent>
-      </Dialog>
+        </main>
+      </div>
     </div>
   )
 }
