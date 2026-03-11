@@ -822,14 +822,71 @@ Albion Pricing Team
                       </p>
                     </div>
                     
-                    <div className="border rounded-lg p-4 bg-muted/30 mb-4">
-                      <div className="mb-3 pb-3 border-b">
-                        <p className="text-sm"><strong>To:</strong> {emailRecipient || "recipient@example.com"}</p>
-                        <p className="text-sm"><strong>Subject:</strong> {emailSubject}</p>
+                    {/* Email Header */}
+                    <div className="border rounded-lg overflow-hidden mb-4">
+                      <div className="bg-muted/50 p-4 border-b">
+                        <div className="grid gap-1 text-sm">
+                          <p><span className="font-medium text-muted-foreground">To:</span> {emailRecipient || "recipient@example.com"}</p>
+                          <p><span className="font-medium text-muted-foreground">Subject:</span> {emailSubject}</p>
+                          <p><span className="font-medium text-muted-foreground">From:</span> pricing@albion.com</p>
+                        </div>
                       </div>
-                      <pre className="text-sm whitespace-pre-wrap font-mono text-foreground/80 max-h-80 overflow-y-auto">
-                        {generateEmailPreview()}
-                      </pre>
+                      
+                      {/* Email Body */}
+                      <div className="p-6 bg-white max-h-[500px] overflow-y-auto">
+                        <div className="max-w-2xl">
+                          <p className="text-foreground mb-4">Dear Customer,</p>
+                          <p className="text-foreground mb-6">{emailMessage}</p>
+                          
+                          <div className="mb-6">
+                            <h4 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b-2 border-accent">
+                              Pricing Schedule
+                            </h4>
+                            
+                            {[...new Set(ingestedData.map(item => item.category))].map(category => (
+                              <div key={category} className="mb-6">
+                                <h5 className="font-medium text-accent mb-3">{category}</h5>
+                                <div className="border rounded-lg overflow-hidden">
+                                  <table className="w-full text-sm">
+                                    <thead className="bg-muted/50">
+                                      <tr>
+                                        <th className="text-left p-2 font-medium">Code</th>
+                                        <th className="text-left p-2 font-medium">Description</th>
+                                        <th className="text-left p-2 font-medium">Unit</th>
+                                        <th className="text-right p-2 font-medium">Price</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {ingestedData
+                                        .filter(item => item.category === category)
+                                        .map((item, idx) => (
+                                          <tr key={item.id} className={idx % 2 === 0 ? "bg-white" : "bg-muted/20"}>
+                                            <td className="p-2 font-mono text-xs">{item.code}</td>
+                                            <td className="p-2">{item.description}</td>
+                                            <td className="p-2">{item.unit}</td>
+                                            <td className="p-2 text-right font-medium">
+                                              {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="text-sm text-muted-foreground mb-6 p-3 bg-muted/30 rounded">
+                            <p><strong>Total Items:</strong> {ingestedData.length}</p>
+                            <p><strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}</p>
+                          </div>
+                          
+                          <div className="text-foreground">
+                            <p>Kind regards,</p>
+                            <p className="font-medium">Albion Pricing Team</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-3">
