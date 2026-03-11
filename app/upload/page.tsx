@@ -158,25 +158,19 @@ Albion Pricing Team
   }
 
   const ingestPricingData = async (file: UploadedFile) => {
-    console.log("[v0] ingestPricingData called with:", file.name)
     if (!file.file || !file.name.toLowerCase().endsWith(".csv")) {
-      console.log("[v0] File rejected - file.file:", !!file.file, "is CSV:", file.name.toLowerCase().endsWith(".csv"))
       return
     }
     
     setIsIngesting(true)
-    console.log("[v0] Starting ingestion...")
     
     try {
       const fullData = await readFullFile(file.file)
-      console.log("[v0] Full data rows:", fullData.length)
       if (fullData.length < 2) {
-        console.log("[v0] Not enough rows in file")
         return
       }
       
       const headers = fullData[0].map(h => h.toLowerCase().trim())
-      console.log("[v0] Headers found:", headers)
       const rows = fullData.slice(1)
       
       // Find column indices (flexible matching)
@@ -202,12 +196,7 @@ Albion Pricing Team
       // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      console.log("[v0] Ingested items count:", newItems.length)
-      console.log("[v0] Sample item:", newItems[0])
-      setIngestedData(prev => {
-        console.log("[v0] Previous data count:", prev.length, "Adding:", newItems.length)
-        return [...prev, ...newItems]
-      })
+      setIngestedData(prev => [...prev, ...newItems])
     } finally {
       setIsIngesting(false)
     }
@@ -270,7 +259,6 @@ Albion Pricing Team
 
         // Simulate upload completion and ingest data
         setTimeout(async () => {
-          console.log("[v0] Upload complete for:", file.name)
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId
@@ -280,9 +268,7 @@ Albion Pricing Team
           )
           
           // Auto-ingest pricing data for CSV files
-          console.log("[v0] Checking if CSV:", file.name, "isCSV:", file.name.toLowerCase().endsWith(".csv"))
           if (file.name.toLowerCase().endsWith(".csv")) {
-            console.log("[v0] Creating uploadedFile object for ingestion")
             const uploadedFile: UploadedFile = {
               id: fileId,
               name: file.name,
@@ -291,9 +277,7 @@ Albion Pricing Team
               status: "success",
               file: file,
             }
-            console.log("[v0] Calling ingestPricingData")
             await ingestPricingData(uploadedFile)
-            console.log("[v0] ingestPricingData completed")
           }
         }, 1500 + Math.random() * 1000)
       }
@@ -361,12 +345,12 @@ Albion Pricing Team
               >
                 Order Triage
               </Link>
-              <Link
-                href="/upload"
-                className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
-              >
-                Upload
-              </Link>
+<Link
+  href="/upload"
+  className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
+  >
+  Pricing Communication
+  </Link>
               <Link
                 href="/roles"
                 className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
@@ -396,9 +380,9 @@ Albion Pricing Team
       <main className="p-6">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Upload Pricing Sheets</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Pricing Communication</h1>
             <p className="text-muted-foreground">
-              Upload your pricing sheet files in CSV or Excel format to update product pricing data
+              Upload pricing data and send pricing communications to customers
             </p>
           </div>
 
@@ -406,11 +390,7 @@ Albion Pricing Team
             <TabsList className="mb-6">
               <TabsTrigger value="upload" className="gap-2">
                 <Upload className="h-4 w-4" />
-                Upload
-              </TabsTrigger>
-              <TabsTrigger value="ingested" className="gap-2">
-                <Database className="h-4 w-4" />
-                Ingested Data
+                Upload Data
                 {ingestedData.length > 0 && (
                   <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-accent text-white">
                     {ingestedData.length}
@@ -419,7 +399,7 @@ Albion Pricing Team
               </TabsTrigger>
               <TabsTrigger value="email" className="gap-2">
                 <Mail className="h-4 w-4" />
-                Email Integration
+                Email Communication
               </TabsTrigger>
             </TabsList>
 
@@ -689,91 +669,6 @@ Albion Pricing Team
               )}
             </Card>
           )}
-            </TabsContent>
-
-            <TabsContent value="ingested">
-              {/* Ingested Data Section */}
-              {ingestedData.length === 0 ? (
-                <Card className="p-12">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="mb-4 p-4 rounded-full bg-muted">
-                      <Database className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">
-                      No Data Ingested Yet
-                    </h3>
-                    <p className="text-muted-foreground max-w-md mb-6">
-                      Upload a CSV pricing sheet file to see the ingested data here. The data will be automatically processed and displayed for review.
-                    </p>
-                  </div>
-                </Card>
-              ) : (
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">
-                        Ingested Pricing Data
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {ingestedData.length} items from {[...new Set(ingestedData.map(d => d.sourceFile))].length} file(s)
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {isIngesting && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                          Processing...
-                        </div>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIngestedData([])}
-                      >
-                        Clear All
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="border rounded-lg overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50">
-                          <TableHead className="font-semibold">Code</TableHead>
-                          <TableHead className="font-semibold">Description</TableHead>
-                          <TableHead className="font-semibold">Unit</TableHead>
-                          <TableHead className="font-semibold">Category</TableHead>
-                          <TableHead className="font-semibold text-right">Price</TableHead>
-                          <TableHead className="font-semibold">Source File</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {ingestedData.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                            <TableCell className="max-w-xs truncate">{item.description}</TableCell>
-                            <TableCell>{item.unit}</TableCell>
-                            <TableCell>
-                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
-                                {item.category}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{item.sourceFile}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  
-                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>Showing all {ingestedData.length} items</p>
-                    <p>Last updated: {ingestedData[ingestedData.length - 1]?.ingestedAt.toLocaleString()}</p>
-                  </div>
-                </Card>
-              )}
             </TabsContent>
 
             <TabsContent value="email">
