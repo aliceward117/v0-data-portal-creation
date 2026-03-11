@@ -392,11 +392,19 @@ export default function RolesPage() {
                     <div className="divide-y">
                       {getUsersByRole(selectedRole.name).map(user => (
                         <div key={user.id} className="flex items-center gap-3 p-3">
-                          <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
-                            <span className="text-xs font-medium text-white">
-                              {getInitials(user.name)}
-                            </span>
-                          </div>
+                          {user.photo ? (
+                            <img 
+                              src={user.photo} 
+                              alt={user.name}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
+                              <span className="text-xs font-medium text-white">
+                                {getInitials(user.name)}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">
                               {user.name}
@@ -572,11 +580,19 @@ export default function RolesPage() {
                           checked={selectedUserIds.includes(user.id)}
                           onCheckedChange={() => toggleUserSelection(user.id)}
                         />
-                        <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
-                          <span className="text-xs font-medium text-white">
-                            {getInitials(user.name)}
-                          </span>
-                        </div>
+                        {user.photo ? (
+                          <img 
+                            src={user.photo} 
+                            alt={user.name}
+                            className="h-8 w-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
+                            <span className="text-xs font-medium text-white">
+                              {getInitials(user.name)}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">
                             {user.name}
