@@ -294,7 +294,20 @@ export default function UploadPage() {
                   >
                     {getFileIcon(file.name)}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">{file.name}</p>
+                      <button
+                        onClick={() => {
+                          if (file.status === "success" && file.previewData) {
+                            setSelectedFileId(selectedFileId === file.id ? null : file.id)
+                          }
+                        }}
+                        className={`font-medium truncate text-left ${
+                          file.status === "success" && file.previewData
+                            ? "text-accent hover:underline cursor-pointer"
+                            : "text-foreground cursor-default"
+                        }`}
+                      >
+                        {file.name}
+                      </button>
                       <p className="text-sm text-muted-foreground">
                         {formatFileSize(file.size)}
                         {file.uploadedAt && (
