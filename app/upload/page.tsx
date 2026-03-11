@@ -644,6 +644,48 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
+              {/* Public Pricing Page Link */}
+              <Card className="p-6 mb-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-accent/10">
+                    <ExternalLink className="h-5 w-5 text-accent" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground mb-1">
+                      External Pricing Page
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Share this public link with customers in your email campaigns. They can view the current pricing schedule without needing to log in.
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <div className="flex-1 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
+                          <code className="text-foreground truncate">{typeof window !== 'undefined' ? `${window.location.origin}/pricing` : '/pricing'}</code>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const url = typeof window !== 'undefined' ? `${window.location.origin}/pricing` : '/pricing'
+                            navigator.clipboard.writeText(url)
+                          }}
+                        >
+                          Copy Link
+                        </Button>
+                        <Link href="/pricing" target="_blank">
+                          <Button size="sm" className="gap-2">
+                            <ExternalLink className="h-4 w-4" />
+                            Preview Page
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
               {/* Mailchimp Integration with Pricing Data View */}
               <Card className="p-8">
                 <div className="flex flex-col items-center justify-center text-center mb-8">
