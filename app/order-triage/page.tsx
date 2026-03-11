@@ -1826,7 +1826,7 @@ export default function OrderTriagePage() {
   href="/order-triage"
   className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
   >
-> Order Triage
+  Order Triage
   </Link>
   <Link
   href="/upload"
