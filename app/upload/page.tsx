@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Eye } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Eye, FileText, Database } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type UploadedFile = {
   id: string
@@ -26,10 +27,23 @@ type UploadedFile = {
   file?: File
 }
 
+type PricingItem = {
+  id: string
+  code: string
+  description: string
+  unit: string
+  category: string
+  price: number
+  sourceFile: string
+  ingestedAt: Date
+}
+
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
+  const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
+  const [isIngesting, setIsIngesting] = useState(false)
 
   const parseCSV = (text: string): string[][] => {
     const lines = text.split("\n").filter(line => line.trim())
@@ -65,6 +79,60 @@ export default function UploadPage() {
       reader.onerror = () => resolve([])
       reader.readAsText(file)
     })
+  }
+
+  const readFullFile = async (file: File): Promise<string[][]> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const text = e.target?.result as string
+        const data = parseCSV(text)
+        resolve(data)
+      }
+      reader.onerror = () => resolve([])
+      reader.readAsText(file)
+    })
+  }
+
+  const ingestPricingData = async (file: UploadedFile) => {
+    if (!file.file || !file.name.toLowerCase().endsWith(".csv")) return
+    
+    setIsIngesting(true)
+    
+    try {
+      const fullData = await readFullFile(file.file)
+      if (fullData.length < 2) return
+      
+      const headers = fullData[0].map(h => h.toLowerCase().trim())
+      const rows = fullData.slice(1)
+      
+      // Find column indices (flexible matching)
+      const codeIdx = headers.findIndex(h => h.includes("code") || h.includes("sku") || h.includes("id"))
+      const descIdx = headers.findIndex(h => h.includes("description") || h.includes("name") || h.includes("product"))
+      const unitIdx = headers.findIndex(h => h.includes("unit") || h.includes("uom"))
+      const categoryIdx = headers.findIndex(h => h.includes("category") || h.includes("type") || h.includes("group"))
+      const priceIdx = headers.findIndex(h => h.includes("price") || h.includes("cost") || h.includes("amount"))
+      
+      const newItems: PricingItem[] = rows
+        .filter(row => row.some(cell => cell.trim()))
+        .map((row, index) => ({
+          id: crypto.randomUUID(),
+          code: codeIdx >= 0 ? row[codeIdx] || `ITEM-${index + 1}` : `ITEM-${index + 1}`,
+          description: descIdx >= 0 ? row[descIdx] || "No description" : row[0] || "No description",
+          unit: unitIdx >= 0 ? row[unitIdx] || "EA" : "EA",
+          category: categoryIdx >= 0 ? row[categoryIdx] || "Uncategorized" : "Uncategorized",
+          price: priceIdx >= 0 ? parseFloat(row[priceIdx]?.replace(/[^0-9.-]/g, "")) || 0 : 0,
+          sourceFile: file.name,
+          ingestedAt: new Date(),
+        }))
+      
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setIngestedData(prev => [...prev, ...newItems])
+    } finally {
+      setIsIngesting(false)
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -122,8 +190,8 @@ export default function UploadPage() {
           )
         }
 
-        // Simulate upload completion
-        setTimeout(() => {
+        // Simulate upload completion and ingest data
+        setTimeout(async () => {
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId
@@ -131,6 +199,19 @@ export default function UploadPage() {
                 : f
             )
           )
+          
+          // Auto-ingest pricing data for CSV files
+          if (file.name.toLowerCase().endsWith(".csv")) {
+            const uploadedFile: UploadedFile = {
+              id: fileId,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              status: "success",
+              file: file,
+            }
+            await ingestPricingData(uploadedFile)
+          }
         }, 1500 + Math.random() * 1000)
       }
     }
@@ -230,7 +311,7 @@ export default function UploadPage() {
 
       {/* Main Content */}
       <main className="p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Upload Pricing Sheets</h1>
             <p className="text-muted-foreground">
@@ -238,6 +319,24 @@ export default function UploadPage() {
             </p>
           </div>
 
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="upload" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Upload
+              </TabsTrigger>
+              <TabsTrigger value="ingested" className="gap-2">
+                <Database className="h-4 w-4" />
+                Ingested Data
+                {ingestedData.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-accent text-white">
+                    {ingestedData.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload">
           {/* Upload Area */}
           <Card className="mb-8">
             <div
@@ -428,11 +527,98 @@ export default function UploadPage() {
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
-                </div>
-              </Card>
-            )
+  </Table>
+  </div>
+  </Card>
+  )
           })()}
+            </TabsContent>
+
+            <TabsContent value="ingested">
+              {/* Ingested Data Section */}
+              {ingestedData.length === 0 ? (
+                <Card className="p-12">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="mb-4 p-4 rounded-full bg-muted">
+                      <Database className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      No Data Ingested Yet
+                    </h3>
+                    <p className="text-muted-foreground max-w-md mb-6">
+                      Upload a CSV pricing sheet file to see the ingested data here. The data will be automatically processed and displayed for review.
+                    </p>
+                  </div>
+                </Card>
+              ) : (
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        Ingested Pricing Data
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {ingestedData.length} items from {[...new Set(ingestedData.map(d => d.sourceFile))].length} file(s)
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {isIngesting && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                          Processing...
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIngestedData([])}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="font-semibold">Code</TableHead>
+                          <TableHead className="font-semibold">Description</TableHead>
+                          <TableHead className="font-semibold">Unit</TableHead>
+                          <TableHead className="font-semibold">Category</TableHead>
+                          <TableHead className="font-semibold text-right">Price</TableHead>
+                          <TableHead className="font-semibold">Source File</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ingestedData.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                            <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                            <TableCell>{item.unit}</TableCell>
+                            <TableCell>
+                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                                {item.category}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{item.sourceFile}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+                    <p>Showing all {ingestedData.length} items</p>
+                    <p>Last updated: {ingestedData[ingestedData.length - 1]?.ingestedAt.toLocaleString()}</p>
+                  </div>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
