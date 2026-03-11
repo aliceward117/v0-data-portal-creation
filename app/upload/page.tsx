@@ -126,26 +126,26 @@ export default function PricingCommunicationPage() {
     }, 3000)
   }
 
-  const exportEmailHistoryToCSV = () => {
+  const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipients", "Subject", "Status"]
-    const rows = emailHistory.map(item => [
+    const row = [
       item.sentDate.toLocaleDateString('en-GB'),
       item.sentDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
       item.sentBy,
       item.recipientCount.toString(),
       item.subject,
       item.status,
-    ])
+    ]
     
     const csvContent = [
       headers.join(","),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      row.map(cell => `"${cell}"`).join(",")
     ].join("\n")
     
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
-    link.download = `email_history_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `email_${item.sentDate.toISOString().split('T')[0]}_${item.id}.csv`
     link.click()
   }
 
@@ -815,22 +815,11 @@ export default function PricingCommunicationPage() {
 
               {/* Email History Table */}
               <Card className="p-6 mt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Email History</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Successfully sent pricing communications
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="gap-2"
-                    onClick={exportEmailHistoryToCSV}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export CSV
-                  </Button>
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Email History</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Successfully sent pricing communications
+                  </p>
                 </div>
 
                 {emailHistory.length > 0 ? (
@@ -844,6 +833,7 @@ export default function PricingCommunicationPage() {
                           <TableHead className="font-semibold text-right">Recipients</TableHead>
                           <TableHead className="font-semibold">Subject</TableHead>
                           <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold text-right">Export</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -870,6 +860,17 @@ export default function PricingCommunicationPage() {
                                 <CheckCircle className="h-3 w-3" />
                                 {item.status}
                               </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1 h-8"
+                                onClick={() => exportSingleEmailToCSV(item)}
+                              >
+                                <Download className="h-4 w-4" />
+                                CSV
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
