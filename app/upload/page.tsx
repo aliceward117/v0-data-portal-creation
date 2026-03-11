@@ -116,8 +116,13 @@ export default function PricingCommunicationPage() {
     })
   }
 
+  const isSpreadsheetFile = (filename: string) => {
+    const ext = filename.toLowerCase()
+    return ext.endsWith(".csv") || ext.endsWith(".xlsx") || ext.endsWith(".xls")
+  }
+
   const ingestPricingData = async (file: UploadedFile) => {
-    if (!file.file || !file.name.toLowerCase().endsWith(".csv")) {
+    if (!file.file || !isSpreadsheetFile(file.name)) {
       return
     }
     
@@ -168,7 +173,7 @@ export default function PricingCommunicationPage() {
   }
 
   const isValidFileType = (file: File) => {
-    const validExtensions = [".csv"]
+    const validExtensions = [".csv", ".xlsx", ".xls"]
     return validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
   }
 
@@ -194,8 +199,8 @@ export default function PricingCommunicationPage() {
       setFiles((prev) => [...prev, newFile])
 
       if (isValid) {
-        if (file.name.toLowerCase().endsWith(".csv")) {
-          const previewData = await readFilePreview(file)
+          if (isSpreadsheetFile(file.name)) {
+            const previewData = await readFilePreview(file)
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId ? { ...f, previewData } : f
@@ -212,7 +217,7 @@ export default function PricingCommunicationPage() {
             )
           )
           
-          if (file.name.toLowerCase().endsWith(".csv")) {
+          if (isSpreadsheetFile(file.name)) {
             const uploadedFile: UploadedFile = {
               id: fileId,
               name: file.name,
@@ -420,21 +425,24 @@ export default function PricingCommunicationPage() {
                         No pricing data uploaded
                       </h3>
                       <p className="text-muted-foreground mb-6 max-w-sm">
-                        Upload a CSV file to get started. Your pricing data will be displayed for review before use.
+                        Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use.
                       </p>
                       <input
                         type="file"
                         id="file-upload"
                         className="hidden"
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls"
                         onChange={handleFileSelect}
                       />
                       <Button asChild size="lg">
                         <label htmlFor="file-upload" className="cursor-pointer gap-2">
                           <Upload className="h-4 w-4" />
-                          Select CSV File
+                          Select File
                         </label>
                       </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Supported formats: CSV, XLSX, XLS
+                      </p>
                       <p className="text-xs text-muted-foreground mt-4">
                         Supported format: CSV
                       </p>
