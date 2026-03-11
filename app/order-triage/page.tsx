@@ -1822,12 +1822,24 @@ export default function OrderTriagePage() {
               >
                 Overview
               </Link>
-              <Link
-                href="/order-triage"
-                className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
-              >
-                Order Triage
-              </Link>
+<Link
+  href="/order-triage"
+  className="px-3 py-2 text-sm font-medium text-accent border-b-2 border-accent transition-colors"
+  >
+> Order Triage
+  </Link>
+  <Link
+  href="/upload"
+  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
+  >
+  Upload
+  </Link>
+  <Link
+  href="/roles"
+  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
+  >
+  Roles
+  </Link>
 <Link
   href="/roles"
   className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
