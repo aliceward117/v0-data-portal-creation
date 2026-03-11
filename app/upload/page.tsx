@@ -532,6 +532,67 @@ export default function UploadPage() {
   </Card>
   )
           })()}
+
+          {/* Ingested Data Preview in Upload Tab */}
+          {ingestedData.length > 0 && (
+            <Card className="mt-8 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Uploaded Data Preview
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {ingestedData.length} items ingested from your uploaded files
+                  </p>
+                </div>
+                {isIngesting && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    Processing...
+                  </div>
+                )}
+              </div>
+              
+              <div className="border rounded-lg overflow-auto max-h-96">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">Code</TableHead>
+                      <TableHead className="font-semibold">Description</TableHead>
+                      <TableHead className="font-semibold">Unit</TableHead>
+                      <TableHead className="font-semibold">Category</TableHead>
+                      <TableHead className="font-semibold text-right">Price</TableHead>
+                      <TableHead className="font-semibold">Source File</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ingestedData.slice(0, 20).map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                        <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                        <TableCell>{item.unit}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                            {item.category}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {item.price > 0 ? `£${item.price.toFixed(2)}` : "-"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{item.sourceFile}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {ingestedData.length > 20 && (
+                <p className="mt-3 text-sm text-muted-foreground text-center">
+                  Showing first 20 of {ingestedData.length} items. View the Ingested Data tab for full list.
+                </p>
+              )}
+            </Card>
+          )}
             </TabsContent>
 
             <TabsContent value="ingested">
