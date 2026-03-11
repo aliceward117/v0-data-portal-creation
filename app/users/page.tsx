@@ -1,4 +1,7 @@
-import { Users, Shield, Plus, Search, Mail, Calendar, MoreHorizontal, User, RefreshCw } from "lucide-react"
+"use client"
+
+import { useState } from "react"
+import { Users, Shield, Plus, Search, Mail, Calendar, MoreHorizontal, User, RefreshCw, Check } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,9 +11,58 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+type UserType = {
+  id: number
+  name: string
+  email: string
+  role: string
+  roleColor: string
+  lastActive: string
+  status: string
+}
 
 export default function UsersPage() {
-  const users = [
+  const [showRoleDialog, setShowRoleDialog] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+
+  const roles = [
+    {
+      id: 1,
+      name: "Administrator",
+      description: "Full system access with all permissions",
+      color: "bg-[#b2a0d2]",
+    },
+    {
+      id: 2,
+      name: "Data Analyst",
+      description: "Read access to analytics and reports",
+      color: "bg-[#f6d06f]",
+    },
+    {
+      id: 3,
+      name: "Editor",
+      description: "Create and edit content with limited access",
+      color: "bg-[#60aa74]",
+    },
+    {
+      id: 4,
+      name: "Viewer",
+      description: "Read-only access to portal content",
+      color: "bg-[#323132]",
+    },
+  ]
+
+  const users: UserType[] = [
     {
       id: 1,
       name: "Alice Johnson",
@@ -224,7 +276,14 @@ export default function UsersPage() {
                             <Mail className="h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setSelectedRole(user.role)
+                              setShowRoleDialog(true)
+                            }}
+                          >
                             <RefreshCw className="h-4 w-4" />
                             Change Role
                           </DropdownMenuItem>
@@ -238,6 +297,62 @@ export default function UsersPage() {
           </div>
         </div>
       </main>
+
+      {/* Change Role Dialog */}
+      <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Role</DialogTitle>
+            <DialogDescription>
+              Select a new role for {selectedUser?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-2">
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  onClick={() => setSelectedRole(role.name)}
+                  className={`w-full p-4 rounded-lg border text-left transition-all ${
+                    selectedRole === role.name
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-accent/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`${role.color} h-3 w-3 rounded-full`} />
+                      <div>
+                        <p className="font-medium text-foreground">{role.name}</p>
+                        <p className="text-sm text-muted-foreground">{role.description}</p>
+                      </div>
+                    </div>
+                    {selectedRole === role.name && (
+                      <Check className="h-5 w-5 text-accent" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowRoleDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                // Here you would typically update the user's role
+                setShowRoleDialog(false)
+              }}
+              disabled={!selectedRole || selectedRole === selectedUser?.role}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
