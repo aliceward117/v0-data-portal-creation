@@ -158,15 +158,25 @@ Albion Pricing Team
   }
 
   const ingestPricingData = async (file: UploadedFile) => {
-    if (!file.file || !file.name.toLowerCase().endsWith(".csv")) return
+    console.log("[v0] ingestPricingData called with:", file.name)
+    if (!file.file || !file.name.toLowerCase().endsWith(".csv")) {
+      console.log("[v0] File rejected - file.file:", !!file.file, "is CSV:", file.name.toLowerCase().endsWith(".csv"))
+      return
+    }
     
     setIsIngesting(true)
+    console.log("[v0] Starting ingestion...")
     
     try {
       const fullData = await readFullFile(file.file)
-      if (fullData.length < 2) return
+      console.log("[v0] Full data rows:", fullData.length)
+      if (fullData.length < 2) {
+        console.log("[v0] Not enough rows in file")
+        return
+      }
       
       const headers = fullData[0].map(h => h.toLowerCase().trim())
+      console.log("[v0] Headers found:", headers)
       const rows = fullData.slice(1)
       
       // Find column indices (flexible matching)
@@ -192,7 +202,12 @@ Albion Pricing Team
       // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      setIngestedData(prev => [...prev, ...newItems])
+      console.log("[v0] Ingested items count:", newItems.length)
+      console.log("[v0] Sample item:", newItems[0])
+      setIngestedData(prev => {
+        console.log("[v0] Previous data count:", prev.length, "Adding:", newItems.length)
+        return [...prev, ...newItems]
+      })
     } finally {
       setIsIngesting(false)
     }
@@ -255,6 +270,7 @@ Albion Pricing Team
 
         // Simulate upload completion and ingest data
         setTimeout(async () => {
+          console.log("[v0] Upload complete for:", file.name)
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId
@@ -264,7 +280,9 @@ Albion Pricing Team
           )
           
           // Auto-ingest pricing data for CSV files
+          console.log("[v0] Checking if CSV:", file.name, "isCSV:", file.name.toLowerCase().endsWith(".csv"))
           if (file.name.toLowerCase().endsWith(".csv")) {
+            console.log("[v0] Creating uploadedFile object for ingestion")
             const uploadedFile: UploadedFile = {
               id: fileId,
               name: file.name,
@@ -273,7 +291,9 @@ Albion Pricing Team
               status: "success",
               file: file,
             }
+            console.log("[v0] Calling ingestPricingData")
             await ingestPricingData(uploadedFile)
+            console.log("[v0] ingestPricingData completed")
           }
         }, 1500 + Math.random() * 1000)
       }
