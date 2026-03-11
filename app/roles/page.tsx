@@ -1,10 +1,57 @@
+"use client"
+
+import { useState } from "react"
 import { Users, Shield, Plus, Search } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+type Role = {
+  id: number
+  name: string
+  description: string
+  userCount: number
+  color: string
+}
+
+type UserAssignment = {
+  id: number
+  name: string
+  email: string
+  role: string
+}
 
 export default function RolesPage() {
-  const roles = [
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+
+  // Users data to show assignments
+  const usersData: UserAssignment[] = [
+    { id: 1, name: "Alice Johnson", email: "alice.johnson@albion.com", role: "Administrator" },
+    { id: 2, name: "Bob Smith", email: "bob.smith@albion.com", role: "Data Analyst" },
+    { id: 3, name: "Carol Williams", email: "carol.williams@albion.com", role: "Editor" },
+    { id: 4, name: "David Brown", email: "david.brown@albion.com", role: "Viewer" },
+    { id: 5, name: "Emma Davis", email: "emma.davis@albion.com", role: "Data Analyst" },
+    { id: 6, name: "Frank Miller", email: "frank.miller@albion.com", role: "Editor" },
+    { id: 7, name: "Grace Lee", email: "grace.lee@albion.com", role: "Administrator" },
+    { id: 8, name: "Henry Wilson", email: "henry.wilson@albion.com", role: "Viewer" },
+    { id: 9, name: "Ivy Chen", email: "ivy.chen@albion.com", role: "Data Analyst" },
+    { id: 10, name: "Jack Taylor", email: "jack.taylor@albion.com", role: "Administrator" },
+  ]
+
+  const [roles, setRoles] = useState<Role[]>([
     {
       id: 1,
       name: "Administrator",
@@ -33,7 +80,35 @@ export default function RolesPage() {
       userCount: 24,
       color: "bg-[#323132]", // System primary color
     },
-  ]
+  ])
+
+  const openEditDialog = (role: Role) => {
+    setSelectedRole(role)
+    setEditName(role.name)
+    setEditDescription(role.description)
+    setShowEditDialog(true)
+  }
+
+  const handleSaveRole = () => {
+    if (selectedRole) {
+      setRoles(prevRoles =>
+        prevRoles.map(role =>
+          role.id === selectedRole.id
+            ? { ...role, name: editName, description: editDescription }
+            : role
+        )
+      )
+    }
+    setShowEditDialog(false)
+  }
+
+  const getUsersForRole = (roleName: string) => {
+    return usersData.filter(user => user.role === roleName)
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n[0]).join("").toUpperCase()
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -123,7 +198,12 @@ export default function RolesPage() {
                     <div className={`${role.color} h-3 w-3 rounded-full`} />
                     <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
                   </div>
-                  <Button variant="ghost" size="sm" className="border border-accent hover:bg-accent hover:text-white">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="border border-accent hover:bg-accent hover:text-white"
+                    onClick={() => openEditDialog(role)}
+                  >
                     Edit
                   </Button>
                 </div>
@@ -137,6 +217,98 @@ export default function RolesPage() {
           </div>
         </div>
       </main>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Role</DialogTitle>
+            <DialogDescription>
+              Update the role details and view assigned users
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            {/* Role Color Indicator */}
+            {selectedRole && (
+              <div className="flex items-center gap-3">
+                <div className={`${selectedRole.color} h-4 w-4 rounded-full`} />
+                <span className="text-sm text-muted-foreground">Role color indicator</span>
+              </div>
+            )}
+
+            {/* Editable Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="role-name">Role Name</Label>
+                <Input
+                  id="role-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="role-description">Description</Label>
+                <Textarea
+                  id="role-description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Assigned Users */}
+            {selectedRole && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Assigned Users</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {getUsersForRole(selectedRole.name).length} users
+                  </span>
+                </div>
+                <div className="border rounded-lg max-h-48 overflow-y-auto">
+                  {getUsersForRole(selectedRole.name).length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No users assigned to this role
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {getUsersForRole(selectedRole.name).map(user => (
+                        <div key={user.id} className="flex items-center gap-3 p-3">
+                          <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
+                            <span className="text-xs font-medium text-white">
+                              {getInitials(user.name)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveRole}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
