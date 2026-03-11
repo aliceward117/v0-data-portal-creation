@@ -1,10 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { Users, Shield, Plus, Search, Mail, Calendar, MoreHorizontal, User, RefreshCw, Check } from "lucide-react"
+import { useState, useRef } from "react"
+import { Users, Shield, Plus, Search, Mail, Calendar, MoreHorizontal, User, RefreshCw, Check, Camera, Clock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,12 +36,49 @@ type UserType = {
   roleColor: string
   lastActive: string
   status: string
+  photo?: string
 }
 
 export default function UsersPage() {
   const [showRoleDialog, setShowRoleDialog] = useState(false)
+  const [showProfileDialog, setShowProfileDialog] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  
+  // Profile editing state
+  const [editName, setEditName] = useState("")
+  const [editEmail, setEditEmail] = useState("")
+  const [editRole, setEditRole] = useState("")
+  const [editPhoto, setEditPhoto] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const openProfileDialog = (user: UserType) => {
+    setSelectedUser(user)
+    setEditName(user.name)
+    setEditEmail(user.email)
+    setEditRole(user.role)
+    setEditPhoto(user.photo || null)
+    setShowProfileDialog(true)
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setEditPhoto(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+  }
 
   const roles = [
     {
@@ -268,7 +313,10 @@ export default function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => openProfileDialog(user)}
+                          >
                             <User className="h-4 w-4" />
                             View Profile
                           </DropdownMenuItem>
@@ -348,6 +396,127 @@ export default function UsersPage() {
               }}
               disabled={!selectedRole || selectedRole === selectedUser?.role}
             >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Profile Dialog */}
+      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>User Profile</DialogTitle>
+            <DialogDescription>
+              View and edit user profile information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            {/* Photo Upload */}
+            <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group"
+              >
+                {editPhoto ? (
+                  <div className="h-24 w-24 rounded-full overflow-hidden">
+                    <img 
+                      src={editPhoto} 
+                      alt={editName} 
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-24 w-24 rounded-full bg-accent flex items-center justify-center text-white text-2xl font-semibold">
+                    {getInitials(editName)}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <p className="text-sm text-muted-foreground">Click to upload photo</p>
+            </div>
+
+            {/* Editable Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="profile-name">Name</Label>
+                <Input
+                  id="profile-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile-email">Email Address</Label>
+                <Input
+                  id="profile-email"
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile-role">Role</Label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        <div className="flex items-center gap-2">
+                          <div className={`${role.color} h-2 w-2 rounded-full`} />
+                          {role.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Read-only Fields */}
+              <div className="pt-4 border-t space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedUser?.status === "Active" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-gray-100 text-gray-800"
+                  }`}>
+                    {selectedUser?.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Last Active</span>
+                  <span className="text-sm text-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedUser?.lastActive}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowProfileDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              // Here you would typically save the user's profile
+              setShowProfileDialog(false)
+            }}>
               Save Changes
             </Button>
           </DialogFooter>
