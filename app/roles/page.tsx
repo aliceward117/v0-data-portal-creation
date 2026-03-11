@@ -48,6 +48,7 @@ export default function RolesPage() {
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
   const [editPermissions, setEditPermissions] = useState<string[]>([])
+  const [editPermissionSearch, setEditPermissionSearch] = useState("")
   
   // Add role state
   const [newRoleName, setNewRoleName] = useState("")
@@ -55,12 +56,14 @@ export default function RolesPage() {
   const [newRoleColor, setNewRoleColor] = useState(roleColors[4].color)
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [newRolePermissions, setNewRolePermissions] = useState<string[]>([])
+  const [newPermissionSearch, setNewPermissionSearch] = useState("")
 
   const openEditDialog = (role: RoleType) => {
     setSelectedRole(role)
     setEditName(role.name)
     setEditDescription(role.description)
     setEditPermissions(role.permissions || [])
+    setEditPermissionSearch("")
     setShowEditDialog(true)
   }
 
@@ -87,12 +90,46 @@ export default function RolesPage() {
     )
   }
 
+  const selectAllEditPermissions = () => {
+    setEditPermissions(availablePermissions.map(p => p.id))
+  }
+
+  const deselectAllEditPermissions = () => {
+    setEditPermissions([])
+  }
+
+  const selectAllNewPermissions = () => {
+    setNewRolePermissions(availablePermissions.map(p => p.id))
+  }
+
+  const deselectAllNewPermissions = () => {
+    setNewRolePermissions([])
+  }
+
+  const filterPermissions = (searchTerm: string) => {
+    if (!searchTerm.trim()) return permissionsByCategory
+    
+    const filtered: Record<string, typeof availablePermissions> = {}
+    Object.entries(permissionsByCategory).forEach(([category, permissions]) => {
+      const matchedPermissions = permissions.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      if (matchedPermissions.length > 0) {
+        filtered[category] = matchedPermissions
+      }
+    })
+    return filtered
+  }
+
   const openAddDialog = () => {
     setNewRoleName("")
     setNewRoleDescription("")
     setNewRoleColor(roleColors[4].color)
     setSelectedUserIds([])
     setNewRolePermissions([])
+    setNewPermissionSearch("")
     setShowAddDialog(true)
   }
 
@@ -266,36 +303,74 @@ export default function RolesPage() {
 
             {/* Permissions */}
             <div className="space-y-3">
-              <Label>Permissions</Label>
+              <div className="flex items-center justify-between">
+                <Label>Permissions</Label>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={selectAllEditPermissions}
+                  >
+                    Select All
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={deselectAllEditPermissions}
+                  >
+                    Deselect All
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search permissions..."
+                  value={editPermissionSearch}
+                  onChange={(e) => setEditPermissionSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {editPermissions.length} of {availablePermissions.length} permissions selected
+              </p>
               <div className="border rounded-lg max-h-64 overflow-y-auto">
-                {Object.entries(permissionsByCategory).map(([category, permissions]) => (
-                  <div key={category} className="border-b last:border-b-0">
-                    <div className="bg-muted/50 px-4 py-2">
-                      <h4 className="text-sm font-medium text-foreground">{category}</h4>
-                    </div>
-                    <div className="divide-y">
-                      {permissions.map(permission => (
-                        <div 
-                          key={permission.id} 
-                          className="flex items-center justify-between px-4 py-3"
-                        >
-                          <div className="flex-1 min-w-0 pr-4">
-                            <p className="text-sm font-medium text-foreground">
-                              {permission.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {permission.description}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={editPermissions.includes(permission.id)}
-                            onCheckedChange={() => toggleEditPermission(permission.id)}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                {Object.keys(filterPermissions(editPermissionSearch)).length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No permissions found matching "{editPermissionSearch}"
                   </div>
-                ))}
+                ) : (
+                  Object.entries(filterPermissions(editPermissionSearch)).map(([category, permissions]) => (
+                    <div key={category} className="border-b last:border-b-0">
+                      <div className="bg-muted/50 px-4 py-2">
+                        <h4 className="text-sm font-medium text-foreground">{category}</h4>
+                      </div>
+                      <div className="divide-y">
+                        {permissions.map(permission => (
+                          <div 
+                            key={permission.id} 
+                            className="flex items-center justify-between px-4 py-3"
+                          >
+                            <div className="flex-1 min-w-0 pr-4">
+                              <p className="text-sm font-medium text-foreground">
+                                {permission.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {permission.description}
+                              </p>
+                            </div>
+                            <Switch
+                              checked={editPermissions.includes(permission.id)}
+                              onCheckedChange={() => toggleEditPermission(permission.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -406,36 +481,74 @@ export default function RolesPage() {
 
             {/* Permissions */}
             <div className="space-y-3">
-              <Label>Permissions</Label>
+              <div className="flex items-center justify-between">
+                <Label>Permissions</Label>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={selectAllNewPermissions}
+                  >
+                    Select All
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={deselectAllNewPermissions}
+                  >
+                    Deselect All
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search permissions..."
+                  value={newPermissionSearch}
+                  onChange={(e) => setNewPermissionSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {newRolePermissions.length} of {availablePermissions.length} permissions selected
+              </p>
               <div className="border rounded-lg max-h-64 overflow-y-auto">
-                {Object.entries(permissionsByCategory).map(([category, permissions]) => (
-                  <div key={category} className="border-b last:border-b-0">
-                    <div className="bg-muted/50 px-4 py-2">
-                      <h4 className="text-sm font-medium text-foreground">{category}</h4>
-                    </div>
-                    <div className="divide-y">
-                      {permissions.map(permission => (
-                        <div 
-                          key={permission.id} 
-                          className="flex items-center justify-between px-4 py-3"
-                        >
-                          <div className="flex-1 min-w-0 pr-4">
-                            <p className="text-sm font-medium text-foreground">
-                              {permission.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {permission.description}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={newRolePermissions.includes(permission.id)}
-                            onCheckedChange={() => toggleNewRolePermission(permission.id)}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                {Object.keys(filterPermissions(newPermissionSearch)).length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No permissions found matching "{newPermissionSearch}"
                   </div>
-                ))}
+                ) : (
+                  Object.entries(filterPermissions(newPermissionSearch)).map(([category, permissions]) => (
+                    <div key={category} className="border-b last:border-b-0">
+                      <div className="bg-muted/50 px-4 py-2">
+                        <h4 className="text-sm font-medium text-foreground">{category}</h4>
+                      </div>
+                      <div className="divide-y">
+                        {permissions.map(permission => (
+                          <div 
+                            key={permission.id} 
+                            className="flex items-center justify-between px-4 py-3"
+                          >
+                            <div className="flex-1 min-w-0 pr-4">
+                              <p className="text-sm font-medium text-foreground">
+                                {permission.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {permission.description}
+                              </p>
+                            </div>
+                            <Switch
+                              checked={newRolePermissions.includes(permission.id)}
+                              onCheckedChange={() => toggleNewRolePermission(permission.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
