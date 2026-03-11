@@ -107,7 +107,7 @@ export default function UsersPage() {
     },
   ]
 
-  const users: UserType[] = [
+  const [users, setUsers] = useState<UserType[]>([
     {
       id: 1,
       name: "Alice Johnson",
@@ -162,7 +162,7 @@ export default function UsersPage() {
       lastActive: "2 days ago",
       status: "Active",
     },
-  ]
+  ])
 
   return (
     <div className="min-h-screen bg-background">
@@ -391,7 +391,16 @@ export default function UsersPage() {
             </Button>
             <Button 
               onClick={() => {
-                // Here you would typically update the user's role
+                if (selectedUser && selectedRole) {
+                  const roleData = roles.find(r => r.name === selectedRole)
+                  setUsers(prevUsers => 
+                    prevUsers.map(user => 
+                      user.id === selectedUser.id 
+                        ? { ...user, role: selectedRole, roleColor: roleData?.color || user.roleColor }
+                        : user
+                    )
+                  )
+                }
                 setShowRoleDialog(false)
               }}
               disabled={!selectedRole || selectedRole === selectedUser?.role}
