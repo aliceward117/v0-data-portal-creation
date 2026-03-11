@@ -37,7 +37,7 @@ export default function RolesPage() {
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
 
-  // Users data to show assignments
+  // Users data to show assignments - matches Users page
   const usersData: UserAssignment[] = [
     { id: 1, name: "Alice Johnson", email: "alice.johnson@albion.com", role: "Administrator" },
     { id: 2, name: "Bob Smith", email: "bob.smith@albion.com", role: "Data Analyst" },
@@ -45,10 +45,6 @@ export default function RolesPage() {
     { id: 4, name: "David Brown", email: "david.brown@albion.com", role: "Viewer" },
     { id: 5, name: "Emma Davis", email: "emma.davis@albion.com", role: "Data Analyst" },
     { id: 6, name: "Frank Miller", email: "frank.miller@albion.com", role: "Editor" },
-    { id: 7, name: "Grace Lee", email: "grace.lee@albion.com", role: "Administrator" },
-    { id: 8, name: "Henry Wilson", email: "henry.wilson@albion.com", role: "Viewer" },
-    { id: 9, name: "Ivy Chen", email: "ivy.chen@albion.com", role: "Data Analyst" },
-    { id: 10, name: "Jack Taylor", email: "jack.taylor@albion.com", role: "Administrator" },
   ]
 
   const [roles, setRoles] = useState<Role[]>([
@@ -56,28 +52,28 @@ export default function RolesPage() {
       id: 1,
       name: "Administrator",
       description: "Full system access with all permissions",
-      userCount: 3,
+      userCount: 1,
       color: "bg-[#b2a0d2]", // Soft lavender
     },
     {
       id: 2,
       name: "Data Analyst",
       description: "Read access to analytics and reports",
-      userCount: 12,
+      userCount: 2,
       color: "bg-[#f6d06f]", // Warm gold/yellow
     },
     {
       id: 3,
       name: "Editor",
       description: "Create and edit content with limited access",
-      userCount: 8,
+      userCount: 2,
       color: "bg-[#60aa74]", // System accent color
     },
     {
       id: 4,
       name: "Viewer",
       description: "Read-only access to portal content",
-      userCount: 24,
+      userCount: 1,
       color: "bg-[#323132]", // System primary color
     },
   ])
