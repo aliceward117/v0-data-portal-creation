@@ -16,7 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useUsers, type RoleType } from "@/context/users-context"
+import { Switch } from "@/components/ui/switch"
+import { useUsers, type RoleType, availablePermissions } from "@/context/users-context"
 
 // Available colors for new roles
 const roleColors = [
@@ -30,6 +31,15 @@ const roleColors = [
   { name: "Pink", color: "bg-[#d4a5a5]" },
 ]
 
+// Group permissions by category
+const permissionsByCategory = availablePermissions.reduce((acc, permission) => {
+  if (!acc[permission.category]) {
+    acc[permission.category] = []
+  }
+  acc[permission.category].push(permission)
+  return acc
+}, {} as Record<string, typeof availablePermissions>)
+
 export default function RolesPage() {
   const { roles, users, getUsersByRole, updateRole, addRole } = useUsers()
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -37,25 +47,44 @@ export default function RolesPage() {
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null)
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
+  const [editPermissions, setEditPermissions] = useState<string[]>([])
   
   // Add role state
   const [newRoleName, setNewRoleName] = useState("")
   const [newRoleDescription, setNewRoleDescription] = useState("")
   const [newRoleColor, setNewRoleColor] = useState(roleColors[4].color)
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
+  const [newRolePermissions, setNewRolePermissions] = useState<string[]>([])
 
   const openEditDialog = (role: RoleType) => {
     setSelectedRole(role)
     setEditName(role.name)
     setEditDescription(role.description)
+    setEditPermissions(role.permissions || [])
     setShowEditDialog(true)
   }
 
   const handleSaveRole = () => {
     if (selectedRole) {
-      updateRole(selectedRole.id, editName, editDescription)
+      updateRole(selectedRole.id, editName, editDescription, editPermissions)
     }
     setShowEditDialog(false)
+  }
+
+  const toggleEditPermission = (permissionId: string) => {
+    setEditPermissions(prev =>
+      prev.includes(permissionId)
+        ? prev.filter(id => id !== permissionId)
+        : [...prev, permissionId]
+    )
+  }
+
+  const toggleNewRolePermission = (permissionId: string) => {
+    setNewRolePermissions(prev =>
+      prev.includes(permissionId)
+        ? prev.filter(id => id !== permissionId)
+        : [...prev, permissionId]
+    )
   }
 
   const openAddDialog = () => {
@@ -63,12 +92,13 @@ export default function RolesPage() {
     setNewRoleDescription("")
     setNewRoleColor(roleColors[4].color)
     setSelectedUserIds([])
+    setNewRolePermissions([])
     setShowAddDialog(true)
   }
 
   const handleAddRole = () => {
     if (newRoleName.trim()) {
-      addRole(newRoleName, newRoleDescription, newRoleColor, selectedUserIds)
+      addRole(newRoleName, newRoleDescription, newRoleColor, selectedUserIds, newRolePermissions)
       setShowAddDialog(false)
     }
   }
@@ -195,7 +225,7 @@ export default function RolesPage() {
 
       {/* Edit Role Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Role</DialogTitle>
             <DialogDescription>
@@ -231,6 +261,41 @@ export default function RolesPage() {
                   onChange={(e) => setEditDescription(e.target.value)}
                   rows={3}
                 />
+              </div>
+            </div>
+
+            {/* Permissions */}
+            <div className="space-y-3">
+              <Label>Permissions</Label>
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                {Object.entries(permissionsByCategory).map(([category, permissions]) => (
+                  <div key={category} className="border-b last:border-b-0">
+                    <div className="bg-muted/50 px-4 py-2">
+                      <h4 className="text-sm font-medium text-foreground">{category}</h4>
+                    </div>
+                    <div className="divide-y">
+                      {permissions.map(permission => (
+                        <div 
+                          key={permission.id} 
+                          className="flex items-center justify-between px-4 py-3"
+                        >
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-sm font-medium text-foreground">
+                              {permission.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {permission.description}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={editPermissions.includes(permission.id)}
+                            onCheckedChange={() => toggleEditPermission(permission.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -287,7 +352,7 @@ export default function RolesPage() {
 
       {/* Add Role Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Role</DialogTitle>
             <DialogDescription>
@@ -335,6 +400,41 @@ export default function RolesPage() {
                     }`}
                     title={rc.name}
                   />
+                ))}
+              </div>
+            </div>
+
+            {/* Permissions */}
+            <div className="space-y-3">
+              <Label>Permissions</Label>
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                {Object.entries(permissionsByCategory).map(([category, permissions]) => (
+                  <div key={category} className="border-b last:border-b-0">
+                    <div className="bg-muted/50 px-4 py-2">
+                      <h4 className="text-sm font-medium text-foreground">{category}</h4>
+                    </div>
+                    <div className="divide-y">
+                      {permissions.map(permission => (
+                        <div 
+                          key={permission.id} 
+                          className="flex items-center justify-between px-4 py-3"
+                        >
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-sm font-medium text-foreground">
+                              {permission.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {permission.description}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={newRolePermissions.includes(permission.id)}
+                            onCheckedChange={() => toggleNewRolePermission(permission.id)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
