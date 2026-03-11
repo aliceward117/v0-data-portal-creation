@@ -418,8 +418,8 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
-              {/* Empty State - No files uploaded */}
-              {files.length === 0 && ingestedData.length === 0 && (
+{/* Upload Area - Always show when no file is being processed */}
+              {files.length === 0 && (
                 <Card className="p-8">
                   <div
                     className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
@@ -435,11 +435,14 @@ export default function PricingCommunicationPage() {
                       <div className="mb-6 p-4 rounded-full bg-muted">
                         <FileUp className="h-10 w-10 text-muted-foreground" />
                       </div>
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
-                        No pricing data uploaded
+<h3 className="text-lg font-semibold text-foreground mb-2">
+                        {ingestedData.length > 0 ? "Upload New Pricing Data" : "Upload Pricing Data"}
                       </h3>
                       <p className="text-muted-foreground mb-6 max-w-sm">
-                        Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use.
+                        {ingestedData.length > 0 
+                          ? "Upload a new file to replace the current pricing data."
+                          : "Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use."
+                        }
                       </p>
                       <input
                         type="file"
@@ -457,11 +460,69 @@ export default function PricingCommunicationPage() {
                       <p className="text-xs text-muted-foreground mt-2">
                         Supported formats: CSV, XLSX, XLS
                       </p>
-                      <p className="text-xs text-muted-foreground mt-4">
-                        Supported format: CSV
-                      </p>
                     </div>
                   </div>
+                </Card>
+              )}
+
+              {/* Current Data Preview - Show when data exists but no file upload in progress */}
+              {files.length === 0 && ingestedData.length > 0 && (
+                <Card className="p-6 mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">Current Pricing Data</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {ingestedData.length} items loaded
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {dataApproved && (
+                        <span className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                          <CheckCircle className="h-4 w-4" />
+                          Approved
+                        </span>
+                      )}
+                      <Button variant="outline" size="sm" onClick={clearAllData}>
+                        Clear Data
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg overflow-auto max-h-96">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="font-semibold">Code</TableHead>
+                          <TableHead className="font-semibold">Description</TableHead>
+                          <TableHead className="font-semibold">Unit</TableHead>
+                          <TableHead className="font-semibold">Category</TableHead>
+                          <TableHead className="font-semibold text-right">Price</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ingestedData.slice(0, 10).map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-mono text-sm">{item.code}</TableCell>
+                            <TableCell>{item.description}</TableCell>
+                            <TableCell>{item.unit}</TableCell>
+                            <TableCell>
+                              <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                                {item.category}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              £{item.price.toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {ingestedData.length > 10 && (
+                    <p className="text-sm text-muted-foreground mt-3 text-center">
+                      Showing first 10 of {ingestedData.length} items
+                    </p>
+                  )}
                 </Card>
               )}
 
