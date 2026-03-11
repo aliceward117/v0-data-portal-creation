@@ -61,7 +61,7 @@ export default function PricingCommunicationPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [ingestedData, setIngestedData] = useState<PricingItem[]>(samplePricingData)
   const [isIngesting, setIsIngesting] = useState(false)
-  const [dataApproved, setDataApproved] = useState(true)
+  const [dataApproved, setDataApproved] = useState(false)
   
   // Email state
   const [emailRecipient, setEmailRecipient] = useState("")
@@ -468,17 +468,24 @@ export default function PricingCommunicationPage() {
                 <Card className="p-6 mt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Current Pricing Data</h3>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {dataApproved ? "Current Pricing Data" : "Review Pricing Data"}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        {ingestedData.length} items loaded
+                        {ingestedData.length} items loaded {!dataApproved && "- Pending approval"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {dataApproved && (
+                      {dataApproved ? (
                         <span className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
                           <CheckCircle className="h-4 w-4" />
                           Approved
                         </span>
+                      ) : (
+                        <Button onClick={() => setDataApproved(true)} className="gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Approve Data
+                        </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={clearAllData}>
                         Clear Data
