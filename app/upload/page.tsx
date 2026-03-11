@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink, Download, Clock } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
@@ -70,6 +70,51 @@ export default function PricingCommunicationPage() {
   const [isSending, setIsSending] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
 
+  // Email history
+  type EmailHistoryItem = {
+    id: string
+    sentDate: Date
+    sentBy: string
+    recipientCount: number
+    subject: string
+    status: "success" | "failed"
+  }
+
+  const [emailHistory, setEmailHistory] = useState<EmailHistoryItem[]>([
+    {
+      id: "1",
+      sentDate: new Date("2026-03-10T14:30:00"),
+      sentBy: "Alice Johnson",
+      recipientCount: 156,
+      subject: "March 2026 Pricing Updates",
+      status: "success",
+    },
+    {
+      id: "2",
+      sentDate: new Date("2026-03-05T09:15:00"),
+      sentBy: "Bob Smith",
+      recipientCount: 89,
+      subject: "Q1 Price Adjustments",
+      status: "success",
+    },
+    {
+      id: "3",
+      sentDate: new Date("2026-02-28T16:45:00"),
+      sentBy: "Alice Johnson",
+      recipientCount: 234,
+      subject: "February Pricing Communication",
+      status: "success",
+    },
+    {
+      id: "4",
+      sentDate: new Date("2026-02-15T11:00:00"),
+      sentBy: "Carol Williams",
+      recipientCount: 45,
+      subject: "Special Customer Pricing",
+      status: "success",
+    },
+  ])
+
   const handleSendEmail = async () => {
     setIsSending(true)
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -79,6 +124,29 @@ export default function PricingCommunicationPage() {
       setEmailSent(false)
       setEmailRecipient("")
     }, 3000)
+  }
+
+  const exportEmailHistoryToCSV = () => {
+    const headers = ["Date", "Time", "Sent By", "Recipients", "Subject", "Status"]
+    const rows = emailHistory.map(item => [
+      item.sentDate.toLocaleDateString('en-GB'),
+      item.sentDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      item.sentBy,
+      item.recipientCount.toString(),
+      item.subject,
+      item.status,
+    ])
+    
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n")
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = `email_history_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
   }
 
   const parseCSV = (text: string): string[][] => {
@@ -771,7 +839,79 @@ export default function PricingCommunicationPage() {
                 )}
               </Card>
 
-              
+              {/* Email History Table */}
+              <Card className="p-6 mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Email History</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Successfully sent pricing communications
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={exportEmailHistoryToCSV}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
+
+                {emailHistory.length > 0 ? (
+                  <div className="border rounded-lg overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="font-semibold">Date</TableHead>
+                          <TableHead className="font-semibold">Time</TableHead>
+                          <TableHead className="font-semibold">Sent By</TableHead>
+                          <TableHead className="font-semibold text-right">Recipients</TableHead>
+                          <TableHead className="font-semibold">Subject</TableHead>
+                          <TableHead className="font-semibold">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {emailHistory.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              {item.sentDate.toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {item.sentDate.toLocaleTimeString('en-GB', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </TableCell>
+                            <TableCell>{item.sentBy}</TableCell>
+                            <TableCell className="text-right font-medium">{item.recipientCount}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{item.subject}</TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                <CheckCircle className="h-3 w-3" />
+                                {item.status}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border rounded-lg">
+                    <Clock className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No email history yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Sent communications will appear here
+                    </p>
+                  </div>
+                )}
+              </Card>
             </div>
           )}
         </main>
