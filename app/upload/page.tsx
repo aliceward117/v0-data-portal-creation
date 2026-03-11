@@ -80,8 +80,11 @@ export default function UploadPage() {
       "text/csv",
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/pdf",
     ]
-    const validExtensions = [".csv", ".xls", ".xlsx"]
+    const validExtensions = [".csv", ".xls", ".xlsx", ".doc", ".docx", ".pdf"]
     const hasValidType = validTypes.includes(file.type)
     const hasValidExtension = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
     return hasValidType || hasValidExtension
@@ -262,7 +265,7 @@ export default function UploadPage() {
                   id="file-upload"
                   className="hidden"
                   multiple
-                  accept=".csv,.xls,.xlsx"
+                  accept=".csv,.xls,.xlsx,.doc,.docx,.pdf"
                   onChange={handleFileSelect}
                 />
                 <Button asChild>
@@ -271,7 +274,7 @@ export default function UploadPage() {
                   </label>
                 </Button>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Supported formats: CSV, XLS, XLSX
+                  Supported formats: CSV, Excel, Word, PDF
                 </p>
               </div>
             </div>
