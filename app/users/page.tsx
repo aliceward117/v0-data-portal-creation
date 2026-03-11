@@ -265,13 +265,23 @@ export default function UsersPage() {
               <tbody className="divide-y divide-border">
                 {users.map((user) => (
                   <tr key={user.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
+<td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary-foreground">
-                            {user.name.split(" ").map(n => n[0]).join("")}
-                          </span>
-                        </div>
+                        {user.photo ? (
+                          <div className="h-10 w-10 rounded-full overflow-hidden">
+                            <img 
+                              src={user.photo} 
+                              alt={user.name} 
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary-foreground">
+                              {user.name.split(" ").map(n => n[0]).join("")}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <div className="font-medium text-foreground">{user.name}</div>
                           <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -523,7 +533,23 @@ export default function UsersPage() {
               Cancel
             </Button>
             <Button onClick={() => {
-              // Here you would typically save the user's profile
+              if (selectedUser) {
+                const roleData = roles.find(r => r.name === editRole)
+                setUsers(prevUsers => 
+                  prevUsers.map(user => 
+                    user.id === selectedUser.id 
+                      ? { 
+                          ...user, 
+                          name: editName, 
+                          email: editEmail, 
+                          role: editRole, 
+                          roleColor: roleData?.color || user.roleColor,
+                          photo: editPhoto || undefined
+                        }
+                      : user
+                  )
+                )
+              }
               setShowProfileDialog(false)
             }}>
               Save Changes
