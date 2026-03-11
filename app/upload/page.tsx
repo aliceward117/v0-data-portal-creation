@@ -1,10 +1,18 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Eye } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 type UploadedFile = {
   id: string
@@ -14,11 +22,50 @@ type UploadedFile = {
   status: "uploading" | "success" | "error"
   uploadedAt?: Date
   errorMessage?: string
+  previewData?: string[][]
+  file?: File
 }
 
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
+
+  const parseCSV = (text: string): string[][] => {
+    const lines = text.split("\n").filter(line => line.trim())
+    return lines.map(line => {
+      const values: string[] = []
+      let current = ""
+      let inQuotes = false
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        if (char === '"') {
+          inQuotes = !inQuotes
+        } else if (char === "," && !inQuotes) {
+          values.push(current.trim())
+          current = ""
+        } else {
+          current += char
+        }
+      }
+      values.push(current.trim())
+      return values
+    })
+  }
+
+  const readFilePreview = async (file: File): Promise<string[][]> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const text = e.target?.result as string
+        const data = parseCSV(text)
+        // Return only first 10 rows for preview
+        resolve(data.slice(0, 10))
+      }
+      reader.onerror = () => resolve([])
+      reader.readAsText(file)
+    })
+  }
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes"
@@ -40,37 +87,50 @@ export default function UploadPage() {
     return hasValidType || hasValidExtension
   }
 
-  const processFiles = useCallback((fileList: FileList | null) => {
+  const processFiles = useCallback(async (fileList: FileList | null) => {
     if (!fileList) return
 
-    const newFiles: UploadedFile[] = Array.from(fileList).map((file) => {
+    const fileArray = Array.from(fileList)
+    
+    for (const file of fileArray) {
       const isValid = isValidFileType(file)
-      return {
-        id: crypto.randomUUID(),
+      const fileId = crypto.randomUUID()
+      
+      const newFile: UploadedFile = {
+        id: fileId,
         name: file.name,
         size: file.size,
         type: file.type,
         status: isValid ? "uploading" : "error",
         errorMessage: isValid ? undefined : "Invalid file type. Please upload CSV or Excel files only.",
+        file: file,
       }
-    })
 
-    setFiles((prev) => [...prev, ...newFiles])
+      setFiles((prev) => [...prev, newFile])
 
-    // Simulate upload for valid files
-    newFiles.forEach((file) => {
-      if (file.status === "uploading") {
+      if (isValid) {
+        // Parse CSV preview
+        if (file.name.toLowerCase().endsWith(".csv")) {
+          const previewData = await readFilePreview(file)
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId ? { ...f, previewData } : f
+            )
+          )
+        }
+
+        // Simulate upload completion
         setTimeout(() => {
           setFiles((prev) =>
             prev.map((f) =>
-              f.id === file.id
+              f.id === fileId
                 ? { ...f, status: "success", uploadedAt: new Date() }
                 : f
             )
           )
         }, 1500 + Math.random() * 1000)
       }
-    })
+    }
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -254,6 +314,17 @@ export default function UploadPage() {
                       {file.status === "error" && (
                         <AlertCircle className="h-5 w-5 text-destructive" />
                       )}
+                      {file.status === "success" && file.previewData && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedFileId(selectedFileId === file.id ? null : file.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">Preview file</span>
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -270,28 +341,60 @@ export default function UploadPage() {
             </Card>
           )}
 
-          {/* Instructions */}
-          <Card className="mt-8 p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">File Requirements</h3>
-            <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <span className="text-accent font-bold mt-0.5">1.</span>
-                Files must be in CSV or Excel format (.csv, .xls, .xlsx)
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent font-bold mt-0.5">2.</span>
-                Pricing sheets should include columns for: Code, Description, Unit, Category, and Price
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent font-bold mt-0.5">3.</span>
-                Maximum file size: 10MB per file
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-accent font-bold mt-0.5">4.</span>
-                Ensure prices are formatted as numbers (e.g., 45.90 not £45.90)
-              </li>
-            </ul>
-          </Card>
+          {/* File Preview */}
+          {selectedFileId && (() => {
+            const selectedFile = files.find(f => f.id === selectedFileId)
+            if (!selectedFile?.previewData || selectedFile.previewData.length === 0) return null
+            
+            const headers = selectedFile.previewData[0]
+            const rows = selectedFile.previewData.slice(1)
+            
+            return (
+              <Card className="mt-8 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Preview: {selectedFile.name}
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedFileId(null)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Close preview</span>
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Showing first {rows.length} rows of data
+                </p>
+                <div className="border rounded-lg overflow-auto max-h-96">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {headers.map((header, index) => (
+                          <TableHead key={index} className="font-semibold whitespace-nowrap">
+                            {header || `Column ${index + 1}`}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((row, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                          {row.map((cell, cellIndex) => (
+                            <TableCell key={cellIndex} className="whitespace-nowrap">
+                              {cell}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            )
+          })()}
         </div>
       </main>
     </div>
