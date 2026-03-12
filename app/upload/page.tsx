@@ -164,6 +164,49 @@ export default function PricingCommunicationPage() {
     }, 3000)
   }
 
+  // Mailchimp campaign state
+  type Campaign = {
+    id: string
+    name: string
+    subject: string
+    previewText: string
+    status: "draft" | "scheduled" | "sent"
+    createdAt: Date
+    recipientCount: number
+  }
+
+  const [campaigns] = useState<Campaign[]>([
+    {
+      id: "1",
+      name: "March 2026 Price Update",
+      subject: "Important: Updated Pricing Schedule",
+      previewText: "Please review our updated pricing effective from 01.03.26",
+      status: "draft",
+      createdAt: new Date("2026-03-10"),
+      recipientCount: 156,
+    },
+    {
+      id: "2",
+      name: "Q1 Customer Newsletter",
+      subject: "Your Q1 Pricing Update from Albion",
+      previewText: "New prices and product updates for Q1 2026",
+      status: "draft",
+      createdAt: new Date("2026-03-08"),
+      recipientCount: 234,
+    },
+    {
+      id: "3",
+      name: "Special Accounts Price Notice",
+      subject: "Exclusive Pricing for Valued Customers",
+      previewText: "Thank you for your continued partnership",
+      status: "scheduled",
+      createdAt: new Date("2026-03-05"),
+      recipientCount: 45,
+    },
+  ])
+
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
     
@@ -540,55 +583,53 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
-{/* Upload Area - Always show when no file is being processed */}
-              {files.length === 0 && (
-                <Card className="p-8">
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
-                      isDragging
-                        ? "border-accent bg-accent/5"
-                        : "border-border hover:border-accent/50"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="mb-6 p-4 rounded-full bg-muted">
-                        <FileUp className="h-10 w-10 text-muted-foreground" />
-                      </div>
-<h3 className="text-lg font-semibold text-foreground mb-2">
-                        {ingestedData.length > 0 ? "Upload New Pricing Data" : "Upload Pricing Data"}
-                      </h3>
-                      <p className="text-muted-foreground mb-6 max-w-sm">
-                        {ingestedData.length > 0 
-                          ? "Upload a new file to replace the current pricing data."
-                          : "Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use."
-                        }
-                      </p>
-                      <input
-                        type="file"
-                        id="file-upload"
-                        className="hidden"
-                        accept=".csv,.xlsx,.xls"
-                        onChange={handleFileSelect}
-                      />
-                      <Button asChild size="lg">
-                        <label htmlFor="file-upload" className="cursor-pointer gap-2">
-                          <Upload className="h-4 w-4" />
-                          Select File
-                        </label>
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Supported formats: CSV, XLSX, XLS
-                      </p>
+{/* Upload Area - Always visible for drag and drop */}
+              <Card className="p-8">
+                <div
+                  className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
+                    isDragging
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-accent/50"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="mb-6 p-4 rounded-full bg-muted">
+                      <FileUp className="h-10 w-10 text-muted-foreground" />
                     </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      {ingestedData.length > 0 ? "Upload New Pricing Data" : "Upload Pricing Data"}
+                    </h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                      {ingestedData.length > 0 
+                        ? "Upload a new file to replace the current pricing data."
+                        : "Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use."
+                      }
+                    </p>
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="hidden"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={handleFileSelect}
+                    />
+                    <Button asChild size="lg">
+                      <label htmlFor="file-upload" className="cursor-pointer gap-2">
+                        <Upload className="h-4 w-4" />
+                        Select File
+                      </label>
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Supported formats: CSV, XLSX, XLS
+                    </p>
                   </div>
-                </Card>
-              )}
+                </div>
+              </Card>
 
-              {/* Current Data Preview - Show when data exists but no file upload in progress */}
-              {files.length === 0 && ingestedData.length > 0 && (
+              {/* Current Data Preview - Show when data exists */}
+              {ingestedData.length > 0 && (
                 <Card className="p-6 mt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -774,7 +815,174 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
-              {/* Mailchimp Integration with Pricing Data View */}
+              {/* Campaign Selection */}
+              <Card className="p-6 mb-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Select Campaign</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose a Mailchimp campaign to send your pricing communication
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {campaigns.map((campaign) => (
+                    <div
+                      key={campaign.id}
+                      onClick={() => setSelectedCampaign(campaign)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedCampaign?.id === campaign.id
+                          ? "border-accent bg-accent/5 ring-1 ring-accent"
+                          : "border-border hover:border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-foreground">{campaign.name}</h4>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${
+                              campaign.status === "draft" 
+                                ? "bg-yellow-100 text-yellow-700"
+                                : campaign.status === "scheduled"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {campaign.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">{campaign.subject}</p>
+                          <p className="text-xs text-muted-foreground">{campaign.recipientCount} recipients</p>
+                        </div>
+                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                          selectedCampaign?.id === campaign.id
+                            ? "border-accent bg-accent"
+                            : "border-muted-foreground/30"
+                        }`}>
+                          {selectedCampaign?.id === campaign.id && (
+                            <CheckCircle className="h-3 w-3 text-white" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Campaign Preview */}
+              {selectedCampaign && (
+                <Card className="p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">Campaign Preview</h3>
+                      <p className="text-sm text-muted-foreground">{selectedCampaign.name}</p>
+                    </div>
+                    <a 
+                      href="https://mailchimp.com/features/email/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Button className="gap-2">
+                        <ExternalLink className="h-4 w-4" />
+                        Edit in Mailchimp
+                      </Button>
+                    </a>
+                  </div>
+
+                  {/* Email Preview */}
+                  <div className="border rounded-lg overflow-hidden bg-white">
+                    {/* Email Header */}
+                    <div className="bg-muted/30 p-4 border-b">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex">
+                          <span className="text-muted-foreground w-20">From:</span>
+                          <span className="text-foreground">Albion Pricing Team &lt;pricing@albion.co.uk&gt;</span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-muted-foreground w-20">To:</span>
+                          <span className="text-foreground">{selectedCampaign.recipientCount} recipients</span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-muted-foreground w-20">Subject:</span>
+                          <span className="text-foreground font-medium">{selectedCampaign.subject}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Email Body */}
+                    <div className="p-6">
+                      <div className="max-w-lg mx-auto">
+                        {/* Logo placeholder */}
+                        <div className="text-center mb-6">
+                          <div className="inline-block bg-accent/10 px-6 py-3 rounded">
+                            <span className="text-xl font-bold text-accent">ALBION</span>
+                          </div>
+                        </div>
+
+                        <h2 className="text-xl font-semibold text-foreground mb-4">Updated Pricing Schedule</h2>
+                        
+                        <p className="text-muted-foreground mb-4">
+                          Dear Valued Customer,
+                        </p>
+                        
+                        <p className="text-muted-foreground mb-4">
+                          {selectedCampaign.previewText}. Below you will find a summary of the updated prices for your reference.
+                        </p>
+
+                        {/* Sample pricing table in email */}
+                        {ingestedData.length > 0 && (
+                          <div className="my-6 border rounded overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-muted/50">
+                                  <th className="text-left p-2 font-medium">Product</th>
+                                  <th className="text-right p-2 font-medium">Current</th>
+                                  <th className="text-right p-2 font-medium">New</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {ingestedData.slice(0, 5).map((item) => (
+                                  <tr key={item.id} className="border-t">
+                                    <td className="p-2 font-mono text-xs">{item.code}</td>
+                                    <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                    <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            {ingestedData.length > 5 && (
+                              <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
+                                + {ingestedData.length - 5} more items
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <p className="text-muted-foreground mb-4">
+                          These prices will be effective from <strong>{ingestedData[0]?.liveDate || "the scheduled date"}</strong>. Please contact us if you have any questions.
+                        </p>
+
+                        <p className="text-muted-foreground mb-2">
+                          Best regards,
+                        </p>
+                        <p className="text-muted-foreground font-medium">
+                          The Albion Pricing Team
+                        </p>
+
+                        {/* Footer */}
+                        <div className="mt-8 pt-4 border-t text-center text-xs text-muted-foreground">
+                          <p>Albion Ltd | 123 Business Park | London, UK</p>
+                          <p className="mt-1">
+                            <a href="#" className="text-accent hover:underline">View online</a>
+                            {" | "}
+                            <a href="#" className="text-accent hover:underline">Unsubscribe</a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Mailchimp Link */}
               <Card className="p-8">
                 <div className="flex flex-col items-center justify-center text-center mb-8">
                   <div className="mb-6 p-4 rounded-full bg-[#FFE01B]/10">
@@ -783,12 +991,12 @@ export default function PricingCommunicationPage() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Send Pricing Data via Mailchimp
+                    {selectedCampaign ? "Ready to Send" : "Select a Campaign"}
                   </h3>
                   <p className="text-muted-foreground mb-6 max-w-md">
-                    {ingestedData.length > 0 
-                      ? "Review your pricing data below, then use Mailchimp to send professional email campaigns to your customers."
-                      : "Upload pricing data first, then use Mailchimp to send professional email campaigns to your customers."
+                    {selectedCampaign 
+                      ? `Send "${selectedCampaign.name}" to ${selectedCampaign.recipientCount} recipients via Mailchimp.`
+                      : "Select a campaign above to preview and send your pricing communication."
                     }
                   </p>
                   <a 
@@ -796,9 +1004,9 @@ export default function PricingCommunicationPage() {
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
-                    <Button className="gap-2">
-                      <ExternalLink className="h-4 w-4" />
-                      Open Mailchimp
+                    <Button className="gap-2" disabled={!selectedCampaign}>
+                      <Send className="h-4 w-4" />
+                      Send Campaign
                     </Button>
                   </a>
                 </div>
