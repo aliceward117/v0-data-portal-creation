@@ -1069,8 +1069,9 @@ export default function PricingCommunicationPage() {
                           ))}
                         </TableBody>
                       </Table>
-</Card>
-              )}
+                    </div>
+                  </Card>
+                )}
             </div>
           )}
 
