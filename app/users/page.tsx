@@ -52,6 +52,7 @@ export default function UsersPage() {
   const [newUserEmail, setNewUserEmail] = useState("")
   const [newUserRole, setNewUserRole] = useState("")
   const [newUserPhoto, setNewUserPhoto] = useState<string | null>(null)
+  const [addUserError, setAddUserError] = useState<string | null>(null)
   const newUserFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleNewUserPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +68,13 @@ export default function UsersPage() {
 
   const handleAddUser = () => {
     if (newUserName && newUserEmail && newUserRole) {
+      // Check if user with same email already exists
+      const existingUser = users.find(u => u.email.toLowerCase() === newUserEmail.toLowerCase())
+      if (existingUser) {
+        setAddUserError("A user with this email address already exists.")
+        return
+      }
+      
       const roleData = roles.find(r => r.name === newUserRole)
       const newUser: UserType = {
         id: Date.now(),
@@ -84,6 +92,7 @@ export default function UsersPage() {
       setNewUserEmail("")
       setNewUserRole("")
       setNewUserPhoto(null)
+      setAddUserError(null)
     }
   }
   
@@ -184,7 +193,13 @@ export default function UsersPage() {
               <h1 className="text-3xl font-bold text-foreground mb-2">Users</h1>
               <p className="text-muted-foreground">Manage user accounts and access</p>
             </div>
-            <Button className="gap-2" onClick={() => setShowAddUserDialog(true)}>
+            <Button className="gap-2" onClick={() => {
+              const defaultRole = roles.find(r => r.isDefault)
+              if (defaultRole) {
+                setNewUserRole(defaultRole.name)
+              }
+              setShowAddUserDialog(true)
+            }}>
               <Plus className="h-4 w-4" />
               Add User
             </Button>
@@ -590,8 +605,15 @@ export default function UsersPage() {
                   type="email"
                   placeholder="Enter email address"
                   value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  onChange={(e) => {
+                    setNewUserEmail(e.target.value)
+                    setAddUserError(null)
+                  }}
+                  className={addUserError ? "border-red-500" : ""}
                 />
+                {addUserError && (
+                  <p className="text-sm text-red-500">{addUserError}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -622,6 +644,7 @@ export default function UsersPage() {
               setNewUserEmail("")
               setNewUserRole("")
               setNewUserPhoto(null)
+              setAddUserError(null)
             }}>
               Cancel
             </Button>

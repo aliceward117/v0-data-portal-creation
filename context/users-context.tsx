@@ -26,6 +26,7 @@ export type RoleType = {
   description: string
   color: string
   permissions: string[] // Array of permission IDs
+  isDefault?: boolean // Only one role can be default at a time
 }
 
 // Available permissions in the system
@@ -68,7 +69,8 @@ type UsersContextType = {
   setRoles: React.Dispatch<React.SetStateAction<RoleType[]>>
   getUsersByRole: (roleName: string) => UserType[]
   getRoleColor: (roleName: string) => string
-  updateRole: (roleId: number, newName: string, newDescription: string, permissions: string[]) => void
+  updateRole: (roleId: number, newName: string, newDescription: string, permissions: string[], isDefault?: boolean) => void
+  setDefaultRole: (roleId: number) => void
   addRole: (name: string, description: string, color: string, assignedUserIds: number[], permissions: string[]) => void
 }
 
@@ -100,6 +102,7 @@ const initialRoles: RoleType[] = [
     description: "Read-only access to portal content",
     color: "bg-[#323132]",
     permissions: ["dashboard_view", "pricing_view", "orders_view"],
+    isDefault: true,
   },
 ]
 
@@ -175,20 +178,25 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     return role?.color || "bg-gray-500"
   }
 
-  const updateRole = (roleId: number, newName: string, newDescription: string, permissions: string[]) => {
+  const updateRole = (roleId: number, newName: string, newDescription: string, permissions: string[], isDefault?: boolean) => {
     // Find the old role name
     const oldRole = roles.find(r => r.id === roleId)
     if (!oldRole) return
 
     const oldName = oldRole.name
 
-    // Update the role
+    // Update the role (and clear isDefault from other roles if this one is being set as default)
     setRoles(prevRoles =>
-      prevRoles.map(role =>
-        role.id === roleId
-          ? { ...role, name: newName, description: newDescription, permissions }
-          : role
-      )
+      prevRoles.map(role => {
+        if (role.id === roleId) {
+          return { ...role, name: newName, description: newDescription, permissions, isDefault }
+        }
+        // If setting this role as default, remove default from other roles
+        if (isDefault && role.isDefault) {
+          return { ...role, isDefault: false }
+        }
+        return role
+      })
     )
 
     // Update all users who had the old role name
@@ -201,6 +209,15 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         )
       )
     }
+  }
+
+  const setDefaultRole = (roleId: number) => {
+    setRoles(prevRoles =>
+      prevRoles.map(role => ({
+        ...role,
+        isDefault: role.id === roleId
+      }))
+    )
   }
 
   const addRole = (name: string, description: string, color: string, assignedUserIds: number[], permissions: string[]) => {
@@ -230,7 +247,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <UsersContext.Provider value={{ users, setUsers, roles, setRoles, getUsersByRole, getRoleColor, updateRole, addRole }}>
+    <UsersContext.Provider value={{ users, setUsers, roles, setRoles, getUsersByRole, getRoleColor, updateRole, addRole, setDefaultRole }}>
       {children}
     </UsersContext.Provider>
   )

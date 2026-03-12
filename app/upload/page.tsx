@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink, Download, Clock } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink, Download, Clock, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
@@ -76,9 +76,10 @@ const samplePricingData: PricingItem[] = [
 
 export default function PricingCommunicationPage() {
   const [activeSection, setActiveSection] = useState<ActiveSection>("upload")
+  const [emailSubSection, setEmailSubSection] = useState<"campaigns" | "history">("campaigns")
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const [ingestedData, setIngestedData] = useState<PricingItem[]>(samplePricingData)
+  const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
   const [isIngesting, setIsIngesting] = useState(false)
   const [dataApproved, setDataApproved] = useState(false)
   
@@ -163,6 +164,92 @@ export default function PricingCommunicationPage() {
       setEmailRecipient("")
     }, 3000)
   }
+
+  // Mailchimp campaign state
+  type Campaign = {
+    id: string
+    name: string
+    subject: string
+    previewText: string
+    status: "draft" | "scheduled" | "sent"
+    createdAt: Date
+    recipientCount: number
+  }
+
+  const [campaigns] = useState<Campaign[]>([
+    {
+      id: "1",
+      name: "March 2026 Price Update",
+      subject: "Important: Updated Pricing Schedule",
+      previewText: "Please review our updated pricing effective from 01.03.26",
+      status: "draft",
+      createdAt: new Date("2026-03-10"),
+      recipientCount: 156,
+    },
+    {
+      id: "2",
+      name: "Q1 Customer Newsletter",
+      subject: "Your Q1 Pricing Update from Albion",
+      previewText: "New prices and product updates for Q1 2026",
+      status: "draft",
+      createdAt: new Date("2026-03-08"),
+      recipientCount: 234,
+    },
+    {
+      id: "3",
+      name: "Special Accounts Price Notice",
+      subject: "Exclusive Pricing for Valued Customers",
+      previewText: "Thank you for your continued partnership",
+      status: "scheduled",
+      createdAt: new Date("2026-03-05"),
+      recipientCount: 45,
+    },
+  ])
+
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [previewExpanded, setPreviewExpanded] = useState(true)
+  const [externalSubSection, setExternalSubSection] = useState<"preview" | "history">("preview")
+
+  // Page history data
+  type PublishedPage = {
+    id: string
+    title: string
+    publishedAt: Date
+    effectiveDate: string
+    productCount: number
+    status: "active" | "expired" | "scheduled"
+    url: string
+  }
+
+  const [publishedPages] = useState<PublishedPage[]>([
+    {
+      id: "1",
+      title: "March 2026 Price Update",
+      publishedAt: new Date("2026-03-01"),
+      effectiveDate: "01.03.26",
+      productCount: 29,
+      status: "active",
+      url: "/pricing",
+    },
+    {
+      id: "2", 
+      title: "February 2026 Price Update",
+      publishedAt: new Date("2026-02-01"),
+      effectiveDate: "01.02.26",
+      productCount: 24,
+      status: "expired",
+      url: "/pricing/feb-2026",
+    },
+    {
+      id: "3",
+      title: "January 2026 Price Update", 
+      publishedAt: new Date("2026-01-15"),
+      effectiveDate: "15.01.26",
+      productCount: 31,
+      status: "expired",
+      url: "/pricing/jan-2026",
+    },
+  ])
 
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
@@ -540,55 +627,53 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
-{/* Upload Area - Always show when no file is being processed */}
-              {files.length === 0 && (
-                <Card className="p-8">
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
-                      isDragging
-                        ? "border-accent bg-accent/5"
-                        : "border-border hover:border-accent/50"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="mb-6 p-4 rounded-full bg-muted">
-                        <FileUp className="h-10 w-10 text-muted-foreground" />
-                      </div>
-<h3 className="text-lg font-semibold text-foreground mb-2">
-                        {ingestedData.length > 0 ? "Upload New Pricing Data" : "Upload Pricing Data"}
-                      </h3>
-                      <p className="text-muted-foreground mb-6 max-w-sm">
-                        {ingestedData.length > 0 
-                          ? "Upload a new file to replace the current pricing data."
-                          : "Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use."
-                        }
-                      </p>
-                      <input
-                        type="file"
-                        id="file-upload"
-                        className="hidden"
-                        accept=".csv,.xlsx,.xls"
-                        onChange={handleFileSelect}
-                      />
-                      <Button asChild size="lg">
-                        <label htmlFor="file-upload" className="cursor-pointer gap-2">
-                          <Upload className="h-4 w-4" />
-                          Select File
-                        </label>
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Supported formats: CSV, XLSX, XLS
-                      </p>
+{/* Upload Area - Always visible for drag and drop */}
+              <Card className="p-8">
+                <div
+                  className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
+                    isDragging
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-accent/50"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="mb-6 p-4 rounded-full bg-muted">
+                      <FileUp className="h-10 w-10 text-muted-foreground" />
                     </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      {ingestedData.length > 0 ? "Upload New Pricing Data" : "Upload Pricing Data"}
+                    </h3>
+                    <p className="text-muted-foreground mb-6 max-w-sm">
+                      {ingestedData.length > 0 
+                        ? "Upload a new file to replace the current pricing data."
+                        : "Upload a CSV or Excel file to get started. Your pricing data will be displayed for review before use."
+                      }
+                    </p>
+                    <input
+                      type="file"
+                      id="file-upload"
+                      className="hidden"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={handleFileSelect}
+                    />
+                    <Button asChild size="lg">
+                      <label htmlFor="file-upload" className="cursor-pointer gap-2">
+                        <Upload className="h-4 w-4" />
+                        Select File
+                      </label>
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Supported formats: CSV, XLSX, XLS
+                    </p>
                   </div>
-                </Card>
-              )}
+                </div>
+              </Card>
 
-              {/* Current Data Preview - Show when data exists but no file upload in progress */}
-              {files.length === 0 && ingestedData.length > 0 && (
+              {/* Current Data Preview - Show when data exists */}
+              {ingestedData.length > 0 && (
                 <Card className="p-6 mt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -606,9 +691,13 @@ export default function PricingCommunicationPage() {
                           Approved
                         </span>
                       ) : (
-                        <Button onClick={() => setDataApproved(true)} className="gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Approve Data
+<Button onClick={() => {
+  setDataApproved(true)
+  setActiveSection("email")
+  setEmailSubSection("campaigns")
+  }} className="gap-2">
+  <CheckCircle className="h-4 w-4" />
+  Approve Data
                         </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={clearAllData}>
@@ -698,167 +787,244 @@ export default function PricingCommunicationPage() {
                     </Card>
                   )}
 
-                  {ingestedData.length > 0 && !isIngesting && (
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">Sample Data Preview</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Showing first 10 of {ingestedData.length} items. Review and approve to continue.
-                          </p>
-                        </div>
-                        {!dataApproved && (
-                          <div className="flex gap-2">
-                            <Button variant="outline" onClick={clearAllData}>
-                              Reject
-                            </Button>
-                            <Button onClick={() => setDataApproved(true)}>
-                              Approve Data
-                            </Button>
-                          </div>
-                        )}
-                        {dataApproved && (
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-sm text-green-600">
-                              <CheckCircle className="h-4 w-4" />
-                              Data Approved
-                            </span>
-                            <Button variant="outline" size="sm" onClick={clearAllData}>
-                              Clear & Start Over
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="border rounded-lg overflow-auto max-h-96">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted/50">
-                              <TableHead className="font-semibold">Product Code</TableHead>
-                              <TableHead className="font-semibold text-right">Current Price</TableHead>
-                              <TableHead className="font-semibold text-right">Price</TableHead>
-                              <TableHead className="font-semibold">Date pricing goes live</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {ingestedData.slice(0, 10).map((item) => (
-                              <TableRow key={item.id}>
-                                <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                                <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
-                                <TableCell>{item.liveDate}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </Card>
-                  )}
+                  
                 </div>
               )}
             </div>
           )}
 
-          {activeSection === "email" && (
-            <div className="max-w-4xl">
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold text-foreground mb-2">Email Communication</h1>
-                <p className="text-muted-foreground">
-                  Compose and send pricing communication emails using your approved pricing data.
-                </p>
-              </div>
+{activeSection === "email" && (
+  <div className="max-w-4xl">
+  <div className="mb-6">
+  <h1 className="text-2xl font-bold text-foreground mb-2">Email Communication</h1>
+  <p className="text-muted-foreground">
+  Compose and send pricing communication emails using your approved pricing data.
+  </p>
+  </div>
 
-              {/* Mailchimp Integration with Pricing Data View */}
-              <Card className="p-8">
-                <div className="flex flex-col items-center justify-center text-center mb-8">
-                  <div className="mb-6 p-4 rounded-full bg-[#FFE01B]/10">
-                    <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="#FFE01B"/>
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Send Pricing Data via Mailchimp
-                  </h3>
-                  <p className="text-muted-foreground mb-6 max-w-md">
-                    {ingestedData.length > 0 
-                      ? "Review your pricing data below, then use Mailchimp to send professional email campaigns to your customers."
-                      : "Upload pricing data first, then use Mailchimp to send professional email campaigns to your customers."
-                    }
+  {/* Sub-navigation tabs */}
+  <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 w-fit">
+    <button
+      onClick={() => setEmailSubSection("campaigns")}
+      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+        emailSubSection === "campaigns"
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      Campaigns
+    </button>
+    <button
+      onClick={() => setEmailSubSection("history")}
+      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+        emailSubSection === "history"
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      Email History
+    </button>
+  </div>
+
+  {emailSubSection === "campaigns" && (
+              <div>
+              {/* Campaign Selection */}
+              <Card className="p-6 mb-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Select Campaign</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose a Mailchimp campaign to send your pricing communication
                   </p>
-                  <a 
-                    href="https://mailchimp.com/features/email/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <Button className="gap-2">
-                      <ExternalLink className="h-4 w-4" />
-                      Open Mailchimp
-                    </Button>
-                  </a>
                 </div>
 
-                {/* Pricing Data Preview Table */}
-                {ingestedData.length > 0 ? (
-                  <div className="border-t pt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="text-md font-semibold text-foreground">View Pricing Data</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {ingestedData.length} items {dataApproved ? "(Approved)" : "(Pending approval)"}
-                        </p>
+                <div className="space-y-3">
+                  {campaigns.map((campaign) => (
+                    <div
+                      key={campaign.id}
+                      onClick={() => setSelectedCampaign(campaign)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedCampaign?.id === campaign.id
+                          ? "border-accent bg-accent/5 ring-1 ring-accent"
+                          : "border-border hover:border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-foreground">{campaign.name}</h4>
+                            <span className={`px-2 py-0.5 text-xs rounded-full ${
+                              campaign.status === "draft" 
+                                ? "bg-yellow-100 text-yellow-700"
+                                : campaign.status === "scheduled"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {campaign.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">{campaign.subject}</p>
+                          <p className="text-xs text-muted-foreground">{campaign.recipientCount} recipients</p>
+                        </div>
+                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                          selectedCampaign?.id === campaign.id
+                            ? "border-accent bg-accent"
+                            : "border-muted-foreground/30"
+                        }`}>
+                          {selectedCampaign?.id === campaign.id && (
+                            <CheckCircle className="h-3 w-3 text-white" />
+                          )}
+                        </div>
                       </div>
-                      {!dataApproved && (
-                        <Button variant="outline" size="sm" onClick={() => setActiveSection("upload")}>
-                          Go to Approval
-                        </Button>
-                      )}
                     </div>
-                    <div className="border rounded-lg overflow-auto max-h-96">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead className="font-semibold">Product Code</TableHead>
-                            <TableHead className="font-semibold text-right">Current Price</TableHead>
-                            <TableHead className="font-semibold text-right">Price</TableHead>
-                            <TableHead className="font-semibold">Date pricing goes live</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {ingestedData.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                              <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
-                              <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
-                              <TableCell>{item.liveDate}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border-t pt-6">
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>No pricing data uploaded yet</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => setActiveSection("upload")}
-                        className="mt-2"
-                      >
-                        Upload Pricing Data
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </Card>
 
+              {/* Campaign Preview */}
+              {selectedCampaign && (
+                <Card className="p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <button 
+                      onClick={() => setPreviewExpanded(!previewExpanded)}
+                      className="flex items-center gap-2 text-left"
+                    >
+                      <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${previewExpanded ? "" : "-rotate-90"}`} />
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Campaign Preview</h3>
+                        <p className="text-sm text-muted-foreground">{selectedCampaign.name} - {selectedCampaign.recipientCount} recipients</p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <a 
+                        href="https://mailchimp.com/features/email/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" className="gap-2">
+                          <ExternalLink className="h-4 w-4" />
+                          Edit in Mailchimp
+                        </Button>
+                      </a>
+                      <a 
+                        href="https://mailchimp.com/features/email/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <Button className="gap-2">
+                          <Send className="h-4 w-4" />
+                          Send Campaign
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Email Preview - Collapsible */}
+                  {previewExpanded && (
+                  <div className="border rounded-lg overflow-hidden bg-white">
+                    {/* Email Header */}
+                    <div className="bg-muted/30 p-4 border-b">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex">
+                          <span className="text-muted-foreground w-20">From:</span>
+                          <span className="text-foreground">Albion Pricing Team &lt;pricing@albion.co.uk&gt;</span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-muted-foreground w-20">To:</span>
+                          <span className="text-foreground">{selectedCampaign.recipientCount} recipients</span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-muted-foreground w-20">Subject:</span>
+                          <span className="text-foreground font-medium">{selectedCampaign.subject}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Email Body */}
+                    <div className="p-6">
+                      <div className="max-w-lg mx-auto">
+                        {/* Logo placeholder */}
+                        <div className="text-center mb-6">
+                          <div className="inline-block bg-accent/10 px-6 py-3 rounded">
+                            <span className="text-xl font-bold text-accent">ALBION</span>
+                          </div>
+                        </div>
+
+                        <h2 className="text-xl font-semibold text-foreground mb-4">Updated Pricing Schedule</h2>
+                        
+                        <p className="text-muted-foreground mb-4">
+                          Dear Valued Customer,
+                        </p>
+                        
+                        <p className="text-muted-foreground mb-4">
+                          {selectedCampaign.previewText}. Below you will find a summary of the updated prices for your reference.
+                        </p>
+
+                        {/* Sample pricing table in email */}
+                        {ingestedData.length > 0 && (
+                          <div className="my-6 border rounded overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-muted/50">
+                                  <th className="text-left p-2 font-medium">Product</th>
+                                  <th className="text-right p-2 font-medium">Current</th>
+                                  <th className="text-right p-2 font-medium">New</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {ingestedData.slice(0, 5).map((item) => (
+                                  <tr key={item.id} className="border-t">
+                                    <td className="p-2 font-mono text-xs">{item.code}</td>
+                                    <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                    <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            {ingestedData.length > 5 && (
+                              <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
+                                + {ingestedData.length - 5} more items
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <p className="text-muted-foreground mb-4">
+                          These prices will be effective from <strong>{ingestedData[0]?.liveDate || "the scheduled date"}</strong>. Please contact us if you have any questions.
+                        </p>
+
+                        <p className="text-muted-foreground mb-2">
+                          Best regards,
+                        </p>
+                        <p className="text-muted-foreground font-medium">
+                          The Albion Pricing Team
+                        </p>
+
+                        {/* Footer */}
+                        <div className="mt-8 pt-4 border-t text-center text-xs text-muted-foreground">
+                          <p>Albion Ltd | 123 Business Park | London, UK</p>
+                          <p className="mt-1">
+                            <a href="#" className="text-accent hover:underline">View online</a>
+                            {" | "}
+                            <a href="#" className="text-accent hover:underline">Unsubscribe</a>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+                </Card>
+              )}
+            </div>
+          )}
+
+          {emailSubSection === "history" && (
+            <div>
               {/* Email History Table */}
-              <Card className="p-6 mt-6">
+              <Card className="p-6">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-foreground">Email History</h3>
                   <p className="text-sm text-muted-foreground">
-                    Successfully sent pricing communications
+  Successfully sent pricing communications
                   </p>
                 </div>
 
@@ -929,113 +1095,90 @@ export default function PricingCommunicationPage() {
               </Card>
             </div>
           )}
-
-          {activeSection === "external" && (
+        </div>
+        )}
+  
+        {activeSection === "external" && (
             <div className="max-w-4xl">
-              <div className="mb-8">
+              <div className="mb-6">
                 <h1 className="text-2xl font-bold text-foreground mb-2">External Pricing Page</h1>
                 <p className="text-muted-foreground">
                   Share a public link to your pricing schedule with customers.
                 </p>
               </div>
 
-              {/* Public Pricing Page Link */}
-              <Card className="p-6 mb-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-accent/10">
-                    <ExternalLink className="h-5 w-5 text-accent" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-1">
-                      Public Pricing Link
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Share this link with customers in your email campaigns. They can view the current pricing schedule without needing to log in.
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                      <div className="flex-1 w-full sm:w-auto">
-                        <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
-                          <code className="text-foreground truncate">{typeof window !== 'undefined' ? `${window.location.origin}/pricing` : '/pricing'}</code>
+              {/* Page History */}
+              <Card className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Published Pages</h3>
+                  <p className="text-sm text-muted-foreground">
+                    History of published pricing pages
+                  </p>
+                </div>
+
+                {publishedPages.length > 0 ? (
+                  <div className="space-y-4">
+                    {publishedPages.map((page) => (
+                      <div 
+                        key={page.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg ${
+                            page.status === "active" 
+                              ? "bg-green-100" 
+                              : page.status === "scheduled"
+                              ? "bg-blue-100"
+                              : "bg-gray-100"
+                          }`}>
+                            <FileSpreadsheet className={`h-5 w-5 ${
+                              page.status === "active"
+                                ? "text-green-600"
+                                : page.status === "scheduled"
+                                ? "text-blue-600" 
+                                : "text-gray-500"
+                            }`} />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-foreground">{page.title}</h4>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                              <span>Published: {page.publishedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                              <span>|</span>
+                              <span>{page.productCount} products</span>
+                              <span>|</span>
+                              <span>Effective: {page.effectiveDate}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                            page.status === "active"
+                              ? "bg-green-100 text-green-700"
+                              : page.status === "scheduled"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {page.status === "active" ? "Active" : page.status === "scheduled" ? "Scheduled" : "Expired"}
+                          </span>
+                          <Link href={page.url} target="_blank">
+                            <Button variant="outline" size="sm" className="gap-2">
+                              <ExternalLink className="h-4 w-4" />
+                              View
+                            </Button>
+                          </Link>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            const url = typeof window !== 'undefined' ? `${window.location.origin}/pricing` : '/pricing'
-                            navigator.clipboard.writeText(url)
-                          }}
-                        >
-                          Copy Link
-                        </Button>
-                        <Link href="/pricing" target="_blank">
-                          <Button size="sm" className="gap-2">
-                            <ExternalLink className="h-4 w-4" />
-                            Preview Page
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                </div>
-              </Card>
-
-              {/* Page Preview */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Page Preview</h3>
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-muted/50 px-4 py-2 border-b flex items-center gap-2">
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-400" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                      <div className="w-3 h-3 rounded-full bg-green-400" />
-                    </div>
-                    <div className="flex-1 text-center">
-                      <span className="text-xs text-muted-foreground">/pricing</span>
-                    </div>
+                ) : (
+                  <div className="text-center py-8 border rounded-lg">
+                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No pages published yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Published pricing pages will appear here
+                    </p>
                   </div>
-                  <div className="p-6 bg-background">
-                    <div className="text-center mb-6">
-                      <h4 className="text-xl font-bold text-foreground mb-2">Pricing Schedule</h4>
-                      <p className="text-sm text-muted-foreground">Current pricing information</p>
-                    </div>
-                    {ingestedData.length > 0 ? (
-                      <div className="border rounded-lg overflow-auto max-h-64">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted/50">
-                              <TableHead className="font-semibold">Product Code</TableHead>
-                              <TableHead className="font-semibold text-right">Current Price</TableHead>
-                              <TableHead className="font-semibold text-right">Price</TableHead>
-                              <TableHead className="font-semibold">Date pricing goes live</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {ingestedData.slice(0, 5).map((item) => (
-                              <TableRow key={item.id}>
-                                <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                                <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
-                                <TableCell>{item.liveDate}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                        <p>No pricing data uploaded yet</p>
-                      </div>
-                    )}
-                    {ingestedData.length > 5 && (
-                      <p className="text-center text-sm text-muted-foreground mt-4">
-                        Showing 5 of {ingestedData.length} items
-                      </p>
-                    )}
-                  </div>
-                </div>
+                )}
               </Card>
             </div>
           )}
