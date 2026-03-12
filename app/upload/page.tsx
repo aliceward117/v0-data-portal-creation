@@ -1075,13 +1075,13 @@ export default function PricingCommunicationPage() {
             </div>
           )}
 
-  {emailSubSection === "history" && (
-  <div>
-  {/* Email History Table */}
-  <Card className="p-6">
-  <div className="mb-4">
-  <h3 className="text-lg font-semibold text-foreground">Email History</h3>
-  <p className="text-sm text-muted-foreground">
+          {emailSubSection === "history" && (
+            <div>
+              {/* Email History Table */}
+              <Card className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Email History</h3>
+                  <p className="text-sm text-muted-foreground">
   Successfully sent pricing communications
                   </p>
                 </div>
