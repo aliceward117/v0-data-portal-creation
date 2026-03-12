@@ -207,6 +207,7 @@ export default function PricingCommunicationPage() {
   ])
 
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [previewExpanded, setPreviewExpanded] = useState(true)
 
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
@@ -900,23 +901,42 @@ export default function PricingCommunicationPage() {
               {selectedCampaign && (
                 <Card className="p-6 mb-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">Campaign Preview</h3>
-                      <p className="text-sm text-muted-foreground">{selectedCampaign.name}</p>
-                    </div>
-                    <a 
-                      href="https://mailchimp.com/features/email/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <button 
+                      onClick={() => setPreviewExpanded(!previewExpanded)}
+                      className="flex items-center gap-2 text-left"
                     >
-                      <Button className="gap-2">
-                        <ExternalLink className="h-4 w-4" />
-                        Edit in Mailchimp
-                      </Button>
-                    </a>
+                      <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${previewExpanded ? "" : "-rotate-90"}`} />
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Campaign Preview</h3>
+                        <p className="text-sm text-muted-foreground">{selectedCampaign.name} - {selectedCampaign.recipientCount} recipients</p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <a 
+                        href="https://mailchimp.com/features/email/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" className="gap-2">
+                          <ExternalLink className="h-4 w-4" />
+                          Edit in Mailchimp
+                        </Button>
+                      </a>
+                      <a 
+                        href="https://mailchimp.com/features/email/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        <Button className="gap-2">
+                          <Send className="h-4 w-4" />
+                          Send Campaign
+                        </Button>
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Email Preview */}
+                  {/* Email Preview - Collapsible */}
+                  {previewExpanded && (
                   <div className="border rounded-lg overflow-hidden bg-white">
                     {/* Email Header */}
                     <div className="bg-muted/30 p-4 border-b">
@@ -1008,41 +1028,13 @@ export default function PricingCommunicationPage() {
                       </div>
                     </div>
                   </div>
+                  )}
                 </Card>
               )}
 
-              {/* Mailchimp Link */}
-              <Card className="p-8">
-                <div className="flex flex-col items-center justify-center text-center mb-8">
-                  <div className="mb-6 p-4 rounded-full bg-[#FFE01B]/10">
-                    <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="#FFE01B"/>
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {selectedCampaign ? "Ready to Send" : "Select a Campaign"}
-                  </h3>
-                  <p className="text-muted-foreground mb-6 max-w-md">
-                    {selectedCampaign 
-                      ? `Send "${selectedCampaign.name}" to ${selectedCampaign.recipientCount} recipients via Mailchimp.`
-                      : "Select a campaign above to preview and send your pricing communication."
-                    }
-                  </p>
-                  <a 
-                    href="https://mailchimp.com/features/email/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <Button className="gap-2" disabled={!selectedCampaign}>
-                      <Send className="h-4 w-4" />
-                      Send Campaign
-                    </Button>
-                  </a>
-                </div>
-
-                {/* Pricing Data Preview Table - Only shows when data is uploaded */}
+              {/* Pricing Data Preview Table - Only shows when data is uploaded */}
                 {ingestedData.length > 0 && (
-                  <div className="border-t pt-6">
+                  <Card className="p-6 mb-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="text-md font-semibold text-foreground">View Pricing Data</h4>
@@ -1077,12 +1069,10 @@ export default function PricingCommunicationPage() {
                           ))}
                         </TableBody>
                       </Table>
-                    </div>
-                  </div>
-)}
-  </Card>
-  </div>
-  )}
+</Card>
+              )}
+            </div>
+          )}
 
   {emailSubSection === "history" && (
   <div>
