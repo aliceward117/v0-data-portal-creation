@@ -193,7 +193,13 @@ export default function UsersPage() {
               <h1 className="text-3xl font-bold text-foreground mb-2">Users</h1>
               <p className="text-muted-foreground">Manage user accounts and access</p>
             </div>
-            <Button className="gap-2" onClick={() => setShowAddUserDialog(true)}>
+            <Button className="gap-2" onClick={() => {
+              const defaultRole = roles.find(r => r.isDefault)
+              if (defaultRole) {
+                setNewUserRole(defaultRole.name)
+              }
+              setShowAddUserDialog(true)
+            }}>
               <Plus className="h-4 w-4" />
               Add User
             </Button>
