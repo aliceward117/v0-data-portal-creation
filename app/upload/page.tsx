@@ -623,8 +623,8 @@ export default function PricingCommunicationPage() {
                         <TableRow className="bg-muted/50">
                           <TableHead className="font-semibold">Product Code</TableHead>
                           <TableHead className="font-semibold text-right">Current Price</TableHead>
-                          <TableHead className="font-semibold text-right">New Price</TableHead>
-                          <TableHead className="font-semibold">Date Pricing Goes Live</TableHead>
+                          <TableHead className="font-semibold text-right">Price</TableHead>
+                          <TableHead className="font-semibold">Date pricing goes live</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -736,8 +736,8 @@ export default function PricingCommunicationPage() {
                             <TableRow className="bg-muted/50">
                               <TableHead className="font-semibold">Product Code</TableHead>
                               <TableHead className="font-semibold text-right">Current Price</TableHead>
-                              <TableHead className="font-semibold text-right">New Price</TableHead>
-                              <TableHead className="font-semibold">Date Pricing Goes Live</TableHead>
+                              <TableHead className="font-semibold text-right">Price</TableHead>
+                              <TableHead className="font-semibold">Date pricing goes live</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -819,8 +819,8 @@ export default function PricingCommunicationPage() {
                           <TableRow className="bg-muted/50">
                             <TableHead className="font-semibold">Product Code</TableHead>
                             <TableHead className="font-semibold text-right">Current Price</TableHead>
-                            <TableHead className="font-semibold text-right">New Price</TableHead>
-                            <TableHead className="font-semibold">Date Pricing Goes Live</TableHead>
+                            <TableHead className="font-semibold text-right">Price</TableHead>
+                            <TableHead className="font-semibold">Date pricing goes live</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1007,8 +1007,8 @@ export default function PricingCommunicationPage() {
                             <TableRow className="bg-muted/50">
                               <TableHead className="font-semibold">Product Code</TableHead>
                               <TableHead className="font-semibold text-right">Current Price</TableHead>
-                              <TableHead className="font-semibold text-right">New Price</TableHead>
-                              <TableHead className="font-semibold">Effective Date</TableHead>
+                              <TableHead className="font-semibold text-right">Price</TableHead>
+                              <TableHead className="font-semibold">Date pricing goes live</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>

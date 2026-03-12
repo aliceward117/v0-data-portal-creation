@@ -11,16 +11,35 @@ import {
 
 // Sample pricing data - in production this would come from a database or API
 const pricingData = [
-  { id: "1", code: "ALB-001", currentPrice: 22.50, newPrice: 24.50, liveDate: "01/04/2026" },
-  { id: "2", code: "ALB-002", currentPrice: 3.50, newPrice: 3.75, liveDate: "01/04/2026" },
-  { id: "3", code: "ALB-003", currentPrice: 42.00, newPrice: 45.90, liveDate: "01/04/2026" },
-  { id: "4", code: "ALB-004", currentPrice: 65.00, newPrice: 67.25, liveDate: "01/04/2026" },
-  { id: "5", code: "ALB-005", currentPrice: 17.50, newPrice: 18.30, liveDate: "01/04/2026" },
-  { id: "6", code: "ALB-006", currentPrice: 85.00, newPrice: 89.00, liveDate: "01/04/2026" },
-  { id: "7", code: "ALB-007", currentPrice: 235.00, newPrice: 245.00, liveDate: "01/04/2026" },
-  { id: "8", code: "ALB-008", currentPrice: 11.50, newPrice: 12.50, liveDate: "01/04/2026" },
-  { id: "9", code: "ALB-009", currentPrice: 8.25, newPrice: 8.95, liveDate: "01/04/2026" },
-  { id: "10", code: "ALB-010", currentPrice: 14.50, newPrice: 15.75, liveDate: "01/04/2026" },
+  { id: "1", code: "ANTIBAC", currentPrice: 2.79, newPrice: 2.89, liveDate: "01.03.26" },
+  { id: "2", code: "ANTIBAC750", currentPrice: 1.89, newPrice: 2.19, liveDate: "01.03.26" },
+  { id: "3", code: "APPLEF1", currentPrice: 2.29, newPrice: 2.49, liveDate: "01.03.26" },
+  { id: "4", code: "APPLEJM", currentPrice: 8.59, newPrice: 10.59, liveDate: "01.03.26" },
+  { id: "5", code: "AVOCADOFRRIPE", currentPrice: 1.09, newPrice: 1.09, liveDate: "01.03.26" },
+  { id: "6", code: "BAGPAP8.5", currentPrice: 16.72, newPrice: 16.72, liveDate: "01.03.26" },
+  { id: "7", code: "BAKEWELL", currentPrice: 6.39, newPrice: 6.39, liveDate: "01.03.26" },
+  { id: "8", code: "BANANAFR", currentPrice: 1.75, newPrice: 1.75, liveDate: "01.03.26" },
+  { id: "9", code: "BATHROOMCLEANER", currentPrice: 2.42, newPrice: 2.42, liveDate: "01.03.26" },
+  { id: "10", code: "BEERLINECLEA5", currentPrice: 13.95, newPrice: 13.95, liveDate: "01.03.26" },
+  { id: "11", code: "BEETROOTJUICE", currentPrice: 3.39, newPrice: 3.40, liveDate: "01.03.26" },
+  { id: "12", code: "BISCLOTUS", currentPrice: 17.20, newPrice: 17.98, liveDate: "01.03.26" },
+  { id: "13", code: "BLEACHTHICK5", currentPrice: 4.98, newPrice: 5.39, liveDate: "01.03.26" },
+  { id: "14", code: "BLUEBERRFR", currentPrice: 1.89, newPrice: 1.91, liveDate: "01.03.26" },
+  { id: "15", code: "BLUEBERRFZ", currentPrice: 6.22, newPrice: 6.22, liveDate: "01.03.26" },
+  { id: "16", code: "BLUETOWEL", currentPrice: 12.29, newPrice: 9.98, liveDate: "01.03.26" },
+  { id: "17", code: "BREADMALTBLOOM", currentPrice: 2.19, newPrice: 2.19, liveDate: "01.03.26" },
+  { id: "18", code: "BREADWHOLTHCF", currentPrice: 1.89, newPrice: 1.89, liveDate: "01.03.26" },
+  { id: "19", code: "BREADWHTHCF", currentPrice: 1.89, newPrice: 1.89, liveDate: "01.03.26" },
+  { id: "20", code: "BRUSHWIRE", currentPrice: 4.99, newPrice: 4.99, liveDate: "01.03.26" },
+  { id: "21", code: "BURRATAV100", currentPrice: 1.69, newPrice: 1.69, liveDate: "01.03.26" },
+  { id: "22", code: "BUTTBEANSA10", currentPrice: 4.69, newPrice: 4.69, liveDate: "01.03.26" },
+  { id: "23", code: "CAKEFDAPPLE", currentPrice: 16.39, newPrice: 16.39, liveDate: "01.03.26" },
+  { id: "24", code: "CAKEFDPECAN", currentPrice: 15.75, newPrice: 16.39, liveDate: "01.03.26" },
+  { id: "25", code: "CAKEFRCARR", currentPrice: 15.89, newPrice: 15.89, liveDate: "01.03.26" },
+  { id: "26", code: "CAKEFRCHOC", currentPrice: 19.29, newPrice: 19.86, liveDate: "01.03.26" },
+  { id: "27", code: "CAPERSLILI", currentPrice: 15.39, newPrice: 15.39, liveDate: "01.03.26" },
+  { id: "28", code: "CAWSAPPLE", currentPrice: 23.54, newPrice: 23.54, liveDate: "01.03.26" },
+  { id: "29", code: "CELERYHEAD", currentPrice: 0.95, newPrice: 0.97, liveDate: "01.03.26" },
 ]
 
 export default function PublicPricingPage() {
@@ -92,9 +111,9 @@ export default function PublicPricingPage() {
                 <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">Product Code</TableHead>
                   <TableHead className="font-semibold text-right">Current Price</TableHead>
-                  <TableHead className="font-semibold text-right">New Price</TableHead>
+                  <TableHead className="font-semibold text-right">Price</TableHead>
                   <TableHead className="font-semibold text-right">Change</TableHead>
-                  <TableHead className="font-semibold">Effective Date</TableHead>
+                  <TableHead className="font-semibold">Date pricing goes live</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
