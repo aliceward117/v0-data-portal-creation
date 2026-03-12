@@ -745,66 +745,7 @@ export default function PricingCommunicationPage() {
                     </Card>
                   )}
 
-                  {ingestedData.length > 0 && !isIngesting && (
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">Sample Data Preview</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Showing first 10 of {ingestedData.length} items. Review and approve to continue.
-                          </p>
-                        </div>
-                        {!dataApproved && (
-                          <div className="flex gap-2">
-                            <Button variant="outline" onClick={clearAllData}>
-                              Reject
-                            </Button>
-<Button onClick={() => {
-  setDataApproved(true)
-  setActiveSection("email")
-  setEmailSubSection("campaigns")
-  }}>
-  Approve Data
-  </Button>
-                          </div>
-                        )}
-                        {dataApproved && (
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-sm text-green-600">
-                              <CheckCircle className="h-4 w-4" />
-                              Data Approved
-                            </span>
-                            <Button variant="outline" size="sm" onClick={clearAllData}>
-                              Clear & Start Over
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="border rounded-lg overflow-auto max-h-96">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted/50">
-                              <TableHead className="font-semibold">Product Code</TableHead>
-                              <TableHead className="font-semibold text-right">Current Price</TableHead>
-                              <TableHead className="font-semibold text-right">Price</TableHead>
-                              <TableHead className="font-semibold">Date pricing goes live</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {ingestedData.slice(0, 10).map((item) => (
-                              <TableRow key={item.id}>
-                                <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                                <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
-                                <TableCell>{item.liveDate}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </Card>
-                  )}
+                  
                 </div>
               )}
             </div>
