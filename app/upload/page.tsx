@@ -76,6 +76,7 @@ const samplePricingData: PricingItem[] = [
 
 export default function PricingCommunicationPage() {
   const [activeSection, setActiveSection] = useState<ActiveSection>("upload")
+  const [emailSubSection, setEmailSubSection] = useState<"campaigns" | "history">("campaigns")
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
@@ -647,12 +648,13 @@ export default function PricingCommunicationPage() {
                           Approved
                         </span>
                       ) : (
-                        <Button onClick={() => {
-                          setDataApproved(true)
-                          setActiveSection("email")
-                        }} className="gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Approve Data
+<Button onClick={() => {
+  setDataApproved(true)
+  setActiveSection("email")
+  setEmailSubSection("campaigns")
+  }} className="gap-2">
+  <CheckCircle className="h-4 w-4" />
+  Approve Data
                         </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={clearAllData}>
@@ -757,11 +759,12 @@ export default function PricingCommunicationPage() {
                               Reject
                             </Button>
 <Button onClick={() => {
-                    setDataApproved(true)
-                    setActiveSection("email")
-                  }}>
-                  Approve Data
-                  </Button>
+  setDataApproved(true)
+  setActiveSection("email")
+  setEmailSubSection("campaigns")
+  }}>
+  Approve Data
+  </Button>
                           </div>
                         )}
                         {dataApproved && (
@@ -806,12 +809,41 @@ export default function PricingCommunicationPage() {
             </div>
           )}
 
-          {activeSection === "email" && (
-            <div className="max-w-4xl">
-              <div className="mb-8">
-                <h1 className="text-2xl font-bold text-foreground mb-2">Email Communication</h1>
-                <p className="text-muted-foreground">
-                  Compose and send pricing communication emails using your approved pricing data.
+{activeSection === "email" && (
+  <div className="max-w-4xl">
+  <div className="mb-6">
+  <h1 className="text-2xl font-bold text-foreground mb-2">Email Communication</h1>
+  <p className="text-muted-foreground">
+  Compose and send pricing communication emails using your approved pricing data.
+  </p>
+  </div>
+
+  {/* Sub-navigation tabs */}
+  <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 w-fit">
+    <button
+      onClick={() => setEmailSubSection("campaigns")}
+      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+        emailSubSection === "campaigns"
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      Campaigns
+    </button>
+    <button
+      onClick={() => setEmailSubSection("history")}
+      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+        emailSubSection === "history"
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      Email History
+    </button>
+  </div>
+
+  {emailSubSection === "campaigns" && (
+  <div>
                 </p>
               </div>
 
@@ -1050,15 +1082,19 @@ export default function PricingCommunicationPage() {
                       </Table>
                     </div>
                   </div>
-                )}
-              </Card>
+)}
+  </Card>
+  </div>
+  )}
 
-              {/* Email History Table */}
-              <Card className="p-6 mt-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Email History</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Successfully sent pricing communications
+  {emailSubSection === "history" && (
+  <div>
+  {/* Email History Table */}
+  <Card className="p-6">
+  <div className="mb-4">
+  <h3 className="text-lg font-semibold text-foreground">Email History</h3>
+  <p className="text-sm text-muted-foreground">
+  Successfully sent pricing communications
                   </p>
                 </div>
 
@@ -1129,8 +1165,10 @@ export default function PricingCommunicationPage() {
               </Card>
             </div>
           )}
-
-          {activeSection === "external" && (
+        </div>
+        )}
+  
+        {activeSection === "external" && (
             <div className="max-w-4xl">
               <div className="mb-8">
                 <h1 className="text-2xl font-bold text-foreground mb-2">External Pricing Page</h1>
