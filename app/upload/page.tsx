@@ -208,6 +208,48 @@ export default function PricingCommunicationPage() {
 
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [previewExpanded, setPreviewExpanded] = useState(true)
+  const [externalSubSection, setExternalSubSection] = useState<"preview" | "history">("preview")
+
+  // Page history data
+  type PublishedPage = {
+    id: string
+    title: string
+    publishedAt: Date
+    effectiveDate: string
+    productCount: number
+    status: "active" | "expired" | "scheduled"
+    url: string
+  }
+
+  const [publishedPages] = useState<PublishedPage[]>([
+    {
+      id: "1",
+      title: "March 2026 Price Update",
+      publishedAt: new Date("2026-03-01"),
+      effectiveDate: "01.03.26",
+      productCount: 29,
+      status: "active",
+      url: "/pricing",
+    },
+    {
+      id: "2", 
+      title: "February 2026 Price Update",
+      publishedAt: new Date("2026-02-01"),
+      effectiveDate: "01.02.26",
+      productCount: 24,
+      status: "expired",
+      url: "/pricing/feb-2026",
+    },
+    {
+      id: "3",
+      title: "January 2026 Price Update", 
+      publishedAt: new Date("2026-01-15"),
+      effectiveDate: "15.01.26",
+      productCount: 31,
+      status: "expired",
+      url: "/pricing/jan-2026",
+    },
+  ])
 
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
@@ -1058,13 +1100,39 @@ export default function PricingCommunicationPage() {
   
         {activeSection === "external" && (
             <div className="max-w-4xl">
-              <div className="mb-8">
+              <div className="mb-6">
                 <h1 className="text-2xl font-bold text-foreground mb-2">External Pricing Page</h1>
                 <p className="text-muted-foreground">
                   Share a public link to your pricing schedule with customers.
                 </p>
               </div>
 
+              {/* Sub-navigation tabs */}
+              <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 w-fit">
+                <button
+                  onClick={() => setExternalSubSection("preview")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    externalSubSection === "preview"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Page Preview
+                </button>
+                <button
+                  onClick={() => setExternalSubSection("history")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    externalSubSection === "history"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Page History
+                </button>
+              </div>
+
+              {externalSubSection === "preview" && (
+              <div>
               {/* Public Pricing Page Link */}
               <Card className="p-6 mb-6">
                 <div className="flex items-start gap-4">
@@ -1163,6 +1231,86 @@ export default function PricingCommunicationPage() {
                   </div>
                 </div>
               </Card>
+              </div>
+              )}
+
+              {externalSubSection === "history" && (
+              <div>
+              {/* Page History */}
+              <Card className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Published Pages</h3>
+                  <p className="text-sm text-muted-foreground">
+                    History of published pricing pages
+                  </p>
+                </div>
+
+                {publishedPages.length > 0 ? (
+                  <div className="space-y-4">
+                    {publishedPages.map((page) => (
+                      <div 
+                        key={page.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-lg ${
+                            page.status === "active" 
+                              ? "bg-green-100" 
+                              : page.status === "scheduled"
+                              ? "bg-blue-100"
+                              : "bg-gray-100"
+                          }`}>
+                            <FileSpreadsheet className={`h-5 w-5 ${
+                              page.status === "active"
+                                ? "text-green-600"
+                                : page.status === "scheduled"
+                                ? "text-blue-600" 
+                                : "text-gray-500"
+                            }`} />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-foreground">{page.title}</h4>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                              <span>Published: {page.publishedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                              <span>|</span>
+                              <span>{page.productCount} products</span>
+                              <span>|</span>
+                              <span>Effective: {page.effectiveDate}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                            page.status === "active"
+                              ? "bg-green-100 text-green-700"
+                              : page.status === "scheduled"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {page.status === "active" ? "Active" : page.status === "scheduled" ? "Scheduled" : "Expired"}
+                          </span>
+                          <Link href={page.url} target="_blank">
+                            <Button variant="outline" size="sm" className="gap-2">
+                              <ExternalLink className="h-4 w-4" />
+                              View
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border rounded-lg">
+                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No pages published yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Published pricing pages will appear here
+                    </p>
+                  </div>
+                )}
+              </Card>
+              </div>
+              )}
             </div>
           )}
         </main>

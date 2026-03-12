@@ -1,5 +1,9 @@
-import { FileSpreadsheet, Calendar, TrendingUp } from "lucide-react"
+"use client"
+
+import { useState } from "react"
+import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, ChevronDown } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -42,105 +46,194 @@ const pricingData = [
   { id: "29", code: "CELERYHEAD", currentPrice: 0.95, newPrice: 0.97, liveDate: "01.03.26" },
 ]
 
+const navCategories = [
+  "Spotlight", "Chilled", "Store Cupboard", "Fresh Fruit & Veg", 
+  "Drinks", "Frozen", "Non-Food", "REFINED", "What's New?", "About Us"
+]
+
 export default function PublicPricingPage() {
-  const effectiveDate = "1st April 2026"
+  const [searchQuery, setSearchQuery] = useState("")
+  
+  const effectiveDate = "1st March 2026"
   const lastUpdated = new Date().toLocaleDateString('en-GB', { 
     day: 'numeric', 
     month: 'long', 
     year: 'numeric' 
   })
 
+  const filteredData = pricingData.filter(item => 
+    item.code.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+    <div className="min-h-screen bg-white">
+      {/* Announcement Bar */}
+      <div className="bg-[#E85A71] text-white py-2.5 text-center">
+        <p className="text-sm font-medium">
+          Read our latest Edition | <span className="italic">The Digest</span> 
+          <span className="ml-2">→</span>
+        </p>
+      </div>
+
       {/* Header */}
-      <header className="bg-primary text-primary-foreground">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="h-12 w-12 rounded-lg bg-white/10 flex items-center justify-center">
-              <FileSpreadsheet className="h-6 w-6" />
+      <header className="bg-[#2D3436] text-white">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Search */}
+            <div className="flex items-center gap-2 bg-white rounded px-3 py-2 w-64">
+              <Input 
+                placeholder="Search products..." 
+                className="border-0 p-0 h-auto text-gray-800 placeholder:text-gray-400 focus-visible:ring-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="h-5 w-5 text-[#00B894]" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">Albion Fine Foods</h1>
-              <p className="text-primary-foreground/80">Pricing Schedule</p>
+
+            {/* Logo */}
+            <div className="text-center">
+              <h1 className="text-3xl font-bold tracking-wide">ALBION</h1>
+              <p className="text-xs tracking-[0.3em] text-gray-300">FINE FOODS</p>
+            </div>
+
+            {/* User Actions */}
+            <div className="flex items-center gap-6">
+              <button className="flex items-center gap-2 text-sm hover:text-gray-300">
+                <User className="h-5 w-5" />
+                Sign in / Register
+              </button>
+              <button className="hover:text-gray-300">
+                <Heart className="h-5 w-5" />
+              </button>
+              <button className="flex items-center gap-2 hover:text-gray-300">
+                <ShoppingCart className="h-5 w-5" />
+                <span>£0.00</span>
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Navigation */}
+        <nav className="border-t border-gray-600">
+          <div className="max-w-7xl mx-auto px-6">
+            <ul className="flex items-center justify-center gap-8 py-3 text-sm">
+              {navCategories.map((cat) => (
+                <li key={cat}>
+                  <a href="#" className="hover:text-[#00B894] transition-colors">{cat}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </nav>
       </header>
 
+      {/* Hero Section */}
+      <section className="relative bg-[#2D3436] text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#2D3436] via-[#2D3436]/90 to-transparent z-10" />
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-40"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200')" }}
+        />
+        <div className="relative z-20 max-w-7xl mx-auto px-6 py-20">
+          <div className="max-w-2xl">
+            <h2 className="text-5xl font-bold mb-4 text-[#00B894]">
+              PRICING UPDATE
+            </h2>
+            <p className="text-2xl font-light mb-2">
+              Effective from {effectiveDate}
+            </p>
+            <p className="text-gray-300 text-lg">
+              Please review our updated pricing schedule below
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-12">
         {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Card className="p-5 flex items-start gap-4">
-            <div className="p-3 rounded-lg bg-accent/10">
-              <Calendar className="h-5 w-5 text-accent" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <Card className="p-6 flex items-start gap-4 border-0 shadow-md">
+            <div className="p-3 rounded-full bg-[#00B894]/10">
+              <Calendar className="h-6 w-6 text-[#00B894]" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Effective Date</p>
-              <p className="text-lg font-semibold text-foreground">{effectiveDate}</p>
+              <p className="text-sm text-gray-500">Effective Date</p>
+              <p className="text-xl font-semibold text-gray-900">{effectiveDate}</p>
             </div>
           </Card>
-          <Card className="p-5 flex items-start gap-4">
-            <div className="p-3 rounded-lg bg-accent/10">
-              <TrendingUp className="h-5 w-5 text-accent" />
+          <Card className="p-6 flex items-start gap-4 border-0 shadow-md">
+            <div className="p-3 rounded-full bg-[#00B894]/10">
+              <TrendingUp className="h-6 w-6 text-[#00B894]" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Products</p>
-              <p className="text-lg font-semibold text-foreground">{pricingData.length} items</p>
+              <p className="text-sm text-gray-500">Total Products</p>
+              <p className="text-xl font-semibold text-gray-900">{pricingData.length} items</p>
+            </div>
+          </Card>
+          <Card className="p-6 flex items-start gap-4 border-0 shadow-md">
+            <div className="p-3 rounded-full bg-[#00B894]/10">
+              <FileSpreadsheet className="h-6 w-6 text-[#00B894]" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Last Updated</p>
+              <p className="text-xl font-semibold text-gray-900">{lastUpdated}</p>
             </div>
           </Card>
         </div>
 
         {/* Notice */}
-        <Card className="p-5 mb-8 border-l-4 border-l-accent bg-accent/5">
-          <p className="text-sm text-foreground">
-            <span className="font-semibold">Important:</span> The prices shown below will come into effect on {effectiveDate}. 
-            Please update your records accordingly. For any queries, contact your account manager.
+        <div className="bg-[#00B894]/10 border-l-4 border-[#00B894] p-5 mb-10 rounded-r-lg">
+          <p className="text-gray-700">
+            <span className="font-semibold">Important Notice:</span> The prices shown below will come into effect on {effectiveDate}. 
+            Please update your records accordingly. For any queries regarding these price changes, please contact your dedicated account manager.
           </p>
-        </Card>
+        </div>
 
         {/* Pricing Table */}
-        <Card className="overflow-hidden">
-          <div className="p-5 border-b bg-muted/30">
-            <h2 className="text-lg font-semibold text-foreground">Product Pricing</h2>
-            <p className="text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
+        <Card className="overflow-hidden border-0 shadow-lg">
+          <div className="p-6 border-b bg-[#2D3436] text-white">
+            <h2 className="text-xl font-semibold">Product Pricing Schedule</h2>
+            <p className="text-gray-300 text-sm mt-1">
+              {filteredData.length} products {searchQuery && `matching "${searchQuery}"`}
+            </p>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Product Code</TableHead>
-                  <TableHead className="font-semibold text-right">Current Price</TableHead>
-                  <TableHead className="font-semibold text-right">Price</TableHead>
-                  <TableHead className="font-semibold text-right">Change</TableHead>
-                  <TableHead className="font-semibold">Date pricing goes live</TableHead>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold text-gray-700">Product Code</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-right">Current Price</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-right">New Price</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-right">Change</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Effective Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pricingData.map((item) => {
+                {filteredData.map((item) => {
                   const change = item.newPrice - item.currentPrice
                   const changePercent = ((change / item.currentPrice) * 100).toFixed(1)
                   return (
-                    <TableRow key={item.id} className="hover:bg-muted/30">
-                      <TableCell className="font-mono text-sm font-medium">{item.code}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
+                    <TableRow key={item.id} className="hover:bg-gray-50">
+                      <TableCell className="font-mono text-sm font-medium text-gray-900">{item.code}</TableCell>
+                      <TableCell className="text-right text-gray-500">
                         £{item.currentPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
+                      <TableCell className="text-right font-semibold text-gray-900">
                         £{item.newPrice.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           change > 0 
                             ? "bg-amber-100 text-amber-800" 
                             : change < 0 
                               ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
+                              : "bg-gray-100 text-gray-600"
                         }`}>
                           {change > 0 ? "+" : ""}{changePercent}%
                         </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{item.liveDate}</TableCell>
+                      <TableCell className="text-gray-600">{item.liveDate}</TableCell>
                     </TableRow>
                   )
                 })}
@@ -150,9 +243,11 @@ export default function PublicPricingPage() {
         </Card>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>This pricing schedule is confidential and intended only for the recipient.</p>
-          <p className="mt-1">© {new Date().getFullYear()} Albion Fine Foods. All rights reserved.</p>
+        <div className="mt-12 pt-8 border-t">
+          <div className="flex items-center justify-between text-sm text-gray-500">
+            <p>This pricing schedule is confidential and intended only for the recipient.</p>
+            <p>© {new Date().getFullYear()} Albion Fine Foods. All rights reserved.</p>
+          </div>
         </div>
       </main>
     </div>
