@@ -49,6 +49,7 @@ export default function RolesPage() {
   const [editDescription, setEditDescription] = useState("")
   const [editPermissions, setEditPermissions] = useState<string[]>([])
   const [editPermissionSearch, setEditPermissionSearch] = useState("")
+  const [editIsDefault, setEditIsDefault] = useState(false)
   
   // Add role state
   const [newRoleName, setNewRoleName] = useState("")
@@ -71,12 +72,13 @@ export default function RolesPage() {
     setEditDescription(role.description)
     setEditPermissions(role.permissions || [])
     setEditPermissionSearch("")
+    setEditIsDefault(role.isDefault || false)
     setShowEditDialog(true)
   }
 
   const handleSaveRole = () => {
     if (selectedRole) {
-      updateRole(selectedRole.id, editName, editDescription, editPermissions)
+      updateRole(selectedRole.id, editName, editDescription, editPermissions, editIsDefault)
     }
     setShowEditDialog(false)
   }
@@ -252,12 +254,17 @@ export default function RolesPage() {
                 key={role.id}
                 className="p-6 bg-card border border-border rounded-lg hover:border-primary transition-all"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`${role.color} h-3 w-3 rounded-full`} />
-                    <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
-                  </div>
-                  <Button 
+<div className="flex items-start justify-between mb-4">
+  <div className="flex items-center gap-3">
+  <div className={`${role.color} h-3 w-3 rounded-full`} />
+  <h3 className="text-lg font-semibold text-foreground">{role.name}</h3>
+  {role.isDefault && (
+    <span className="px-2 py-0.5 text-xs font-medium bg-accent/10 text-accent rounded-full">
+      Default
+    </span>
+  )}
+  </div>
+  <Button
                     variant="ghost" 
                     size="sm" 
                     className="border border-accent hover:bg-accent hover:text-white"
@@ -315,6 +322,21 @@ export default function RolesPage() {
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   rows={3}
+                />
+              </div>
+
+              {/* Default Role Toggle */}
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                <div className="space-y-0.5">
+                  <Label htmlFor="default-role" className="text-sm font-medium">Default Role</Label>
+                  <p className="text-xs text-muted-foreground">
+                    New users will be assigned this role automatically
+                  </p>
+                </div>
+                <Switch
+                  id="default-role"
+                  checked={editIsDefault}
+                  onCheckedChange={setEditIsDefault}
                 />
               </div>
             </div>
