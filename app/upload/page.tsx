@@ -1031,47 +1031,6 @@ export default function PricingCommunicationPage() {
                   )}
                 </Card>
               )}
-
-              {/* Pricing Data Preview Table - Only shows when data is uploaded */}
-                {ingestedData.length > 0 && (
-                  <Card className="p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="text-md font-semibold text-foreground">View Pricing Data</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {ingestedData.length} items {dataApproved ? "(Approved)" : "(Pending approval)"}
-                        </p>
-                      </div>
-                      {!dataApproved && (
-                        <Button variant="outline" size="sm" onClick={() => setActiveSection("upload")}>
-                          Go to Approval
-                        </Button>
-                      )}
-                    </div>
-                    <div className="border rounded-lg overflow-auto max-h-96">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead className="font-semibold">Product Code</TableHead>
-                            <TableHead className="font-semibold text-right">Current Price</TableHead>
-                            <TableHead className="font-semibold text-right">Price</TableHead>
-                            <TableHead className="font-semibold">Date pricing goes live</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {ingestedData.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-mono text-sm">{item.code}</TableCell>
-                              <TableCell className="text-right">£{item.currentPrice.toFixed(2)}</TableCell>
-                              <TableCell className="text-right font-medium">£{item.newPrice.toFixed(2)}</TableCell>
-                              <TableCell>{item.liveDate}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </Card>
-                )}
             </div>
           )}
 
