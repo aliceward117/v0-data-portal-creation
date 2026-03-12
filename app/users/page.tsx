@@ -42,6 +42,16 @@ export default function UsersPage() {
   const [editRole, setEditRole] = useState("")
   const [editPhoto, setEditPhoto] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Search state
+  const [userSearchQuery, setUserSearchQuery] = useState("")
+  
+  // Filter users based on search query
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    user.role.toLowerCase().includes(userSearchQuery.toLowerCase())
+  )
 
   const openProfileDialog = (user: UserType) => {
     setSelectedUser(user)
@@ -143,7 +153,12 @@ export default function UsersPage() {
           <div className="mb-6 flex items-center gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-10" />
+              <Input 
+                placeholder="Search users..." 
+                className="pl-10"
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+              />
             </div>
           </div>
 
@@ -169,8 +184,14 @@ export default function UsersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
-                {users.map((user) => (
+<tbody className="divide-y divide-border">
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                        No users found matching "{userSearchQuery}"
+                      </td>
+                    </tr>
+                  ) : filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-muted/30 transition-colors">
 <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
