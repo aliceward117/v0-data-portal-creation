@@ -797,8 +797,8 @@ export default function PricingCommunicationPage() {
                   </a>
                 </div>
 
-                {/* Pricing Data Preview Table */}
-                {ingestedData.length > 0 ? (
+                {/* Pricing Data Preview Table - Only shows when data is uploaded */}
+                {ingestedData.length > 0 && (
                   <div className="border-t pt-6">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -834,20 +834,6 @@ export default function PricingCommunicationPage() {
                           ))}
                         </TableBody>
                       </Table>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border-t pt-6">
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>No pricing data uploaded yet</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => setActiveSection("upload")}
-                        className="mt-2"
-                      >
-                        Upload Pricing Data
-                      </Button>
                     </div>
                   </div>
                 )}
