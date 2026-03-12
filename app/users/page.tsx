@@ -46,6 +46,47 @@ export default function UsersPage() {
   // Search state
   const [userSearchQuery, setUserSearchQuery] = useState("")
   
+  // Add user state
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false)
+  const [newUserName, setNewUserName] = useState("")
+  const [newUserEmail, setNewUserEmail] = useState("")
+  const [newUserRole, setNewUserRole] = useState("")
+  const [newUserPhoto, setNewUserPhoto] = useState<string | null>(null)
+  const newUserFileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleNewUserPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewUserPhoto(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleAddUser = () => {
+    if (newUserName && newUserEmail && newUserRole) {
+      const roleData = roles.find(r => r.name === newUserRole)
+      const newUser: UserType = {
+        id: Date.now(),
+        name: newUserName,
+        email: newUserEmail,
+        role: newUserRole,
+        roleColor: roleData?.color || "bg-gray-500",
+        status: "Active",
+        lastActive: "Just now",
+        photo: newUserPhoto || undefined,
+      }
+      setUsers(prevUsers => [...prevUsers, newUser])
+      setShowAddUserDialog(false)
+      setNewUserName("")
+      setNewUserEmail("")
+      setNewUserRole("")
+      setNewUserPhoto(null)
+    }
+  }
+  
   // Filter users based on search query
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
@@ -143,7 +184,7 @@ export default function UsersPage() {
               <h1 className="text-3xl font-bold text-foreground mb-2">Users</h1>
               <p className="text-muted-foreground">Manage user accounts and access</p>
             </div>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => setShowAddUserDialog(true)}>
               <Plus className="h-4 w-4" />
               Add User
             </Button>
@@ -481,6 +522,114 @@ export default function UsersPage() {
               setShowProfileDialog(false)
             }}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            {/* Photo Upload */}
+            <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={() => newUserFileInputRef.current?.click()}
+                className="relative group"
+              >
+                {newUserPhoto ? (
+                  <div className="h-24 w-24 rounded-full overflow-hidden">
+                    <img 
+                      src={newUserPhoto} 
+                      alt="New user" 
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-2xl font-semibold">
+                    {newUserName ? getInitials(newUserName) : <User className="h-8 w-8" />}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </button>
+              <input
+                ref={newUserFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleNewUserPhotoUpload}
+                className="hidden"
+              />
+              <p className="text-sm text-muted-foreground">Click to upload photo</p>
+            </div>
+
+            {/* User Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-user-name">Name</Label>
+                <Input
+                  id="new-user-name"
+                  placeholder="Enter full name"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-user-email">Email Address</Label>
+                <Input
+                  id="new-user-email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-user-role">Role</Label>
+                <Select value={newUserRole} onValueChange={setNewUserRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        <div className="flex items-center gap-2">
+                          <div className={`${role.color} h-2 w-2 rounded-full`} />
+                          {role.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setShowAddUserDialog(false)
+              setNewUserName("")
+              setNewUserEmail("")
+              setNewUserRole("")
+              setNewUserPhoto(null)
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddUser}
+              disabled={!newUserName || !newUserEmail || !newUserRole}
+            >
+              Add User
             </Button>
           </DialogFooter>
         </DialogContent>
