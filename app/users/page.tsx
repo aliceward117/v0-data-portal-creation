@@ -52,6 +52,7 @@ export default function UsersPage() {
   const [newUserEmail, setNewUserEmail] = useState("")
   const [newUserRole, setNewUserRole] = useState("")
   const [newUserPhoto, setNewUserPhoto] = useState<string | null>(null)
+  const [addUserError, setAddUserError] = useState<string | null>(null)
   const newUserFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleNewUserPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +68,13 @@ export default function UsersPage() {
 
   const handleAddUser = () => {
     if (newUserName && newUserEmail && newUserRole) {
+      // Check if user with same email already exists
+      const existingUser = users.find(u => u.email.toLowerCase() === newUserEmail.toLowerCase())
+      if (existingUser) {
+        setAddUserError("A user with this email address already exists.")
+        return
+      }
+      
       const roleData = roles.find(r => r.name === newUserRole)
       const newUser: UserType = {
         id: Date.now(),
@@ -84,6 +92,7 @@ export default function UsersPage() {
       setNewUserEmail("")
       setNewUserRole("")
       setNewUserPhoto(null)
+      setAddUserError(null)
     }
   }
   
@@ -590,8 +599,15 @@ export default function UsersPage() {
                   type="email"
                   placeholder="Enter email address"
                   value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  onChange={(e) => {
+                    setNewUserEmail(e.target.value)
+                    setAddUserError(null)
+                  }}
+                  className={addUserError ? "border-red-500" : ""}
                 />
+                {addUserError && (
+                  <p className="text-sm text-red-500">{addUserError}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -622,6 +638,7 @@ export default function UsersPage() {
               setNewUserEmail("")
               setNewUserRole("")
               setNewUserPhoto(null)
+              setAddUserError(null)
             }}>
               Cancel
             </Button>
