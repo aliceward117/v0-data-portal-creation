@@ -843,10 +843,7 @@ export default function PricingCommunicationPage() {
   </div>
 
   {emailSubSection === "campaigns" && (
-  <div>
-                </p>
-              </div>
-
+              <div>
               {/* Campaign Selection */}
               <Card className="p-6 mb-6">
                 <div className="mb-4">
