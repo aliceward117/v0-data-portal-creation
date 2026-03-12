@@ -1,71 +1,85 @@
-import { Users, Shield, Plus, Search, Mail, Calendar, MoreHorizontal, User, RefreshCw } from "lucide-react"
+"use client"
+
+import { useState, useRef } from "react"
+import { Users, Shield, Plus, Search, Mail, Calendar, MoreHorizontal, User, RefreshCw, Check, Camera, Clock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { useUsers, type UserType } from "@/context/users-context"
 
 export default function UsersPage() {
-  const users = [
-    {
-      id: 1,
-      name: "Alice Johnson",
-      email: "alice.johnson@albion.com",
-      role: "Administrator",
-      roleColor: "bg-[#b2a0d2]",
-      lastActive: "2 hours ago",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Bob Smith",
-      email: "bob.smith@albion.com",
-      role: "Data Analyst",
-      roleColor: "bg-[#f6d06f]",
-      lastActive: "1 day ago",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Carol Williams",
-      email: "carol.williams@albion.com",
-      role: "Editor",
-      roleColor: "bg-[#60aa74]",
-      lastActive: "3 hours ago",
-      status: "Active",
-    },
-    {
-      id: 4,
-      name: "David Brown",
-      email: "david.brown@albion.com",
-      role: "Viewer",
-      roleColor: "bg-[#323132]",
-      lastActive: "1 week ago",
-      status: "Inactive",
-    },
-    {
-      id: 5,
-      name: "Emma Davis",
-      email: "emma.davis@albion.com",
-      role: "Data Analyst",
-      roleColor: "bg-[#f6d06f]",
-      lastActive: "5 minutes ago",
-      status: "Active",
-    },
-    {
-      id: 6,
-      name: "Frank Miller",
-      email: "frank.miller@albion.com",
-      role: "Editor",
-      roleColor: "bg-[#60aa74]",
-      lastActive: "2 days ago",
-      status: "Active",
-    },
-  ]
+  const { users, setUsers, roles, getRoleColor } = useUsers()
+  const [showRoleDialog, setShowRoleDialog] = useState(false)
+  const [showProfileDialog, setShowProfileDialog] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  
+  // Profile editing state
+  const [editName, setEditName] = useState("")
+  const [editEmail, setEditEmail] = useState("")
+  const [editRole, setEditRole] = useState("")
+  const [editPhoto, setEditPhoto] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Search state
+  const [userSearchQuery, setUserSearchQuery] = useState("")
+  
+  // Filter users based on search query
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+    user.role.toLowerCase().includes(userSearchQuery.toLowerCase())
+  )
+
+  const openProfileDialog = (user: UserType) => {
+    setSelectedUser(user)
+    setEditName(user.name)
+    setEditEmail(user.email)
+    setEditRole(user.role)
+    setEditPhoto(user.photo || null)
+    setShowProfileDialog(true)
+  }
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setEditPhoto(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,6 +103,12 @@ export default function UsersPage() {
                 className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
               >
                 Order Triage
+              </Link>
+              <Link
+                href="/upload"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-accent hover:border-b-2 hover:border-accent transition-colors"
+              >
+                Pricing Communication
               </Link>
               <Link
                 href="/roles"
@@ -133,7 +153,12 @@ export default function UsersPage() {
           <div className="mb-6 flex items-center gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users..." className="pl-10" />
+              <Input 
+                placeholder="Search users..." 
+                className="pl-10"
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+              />
             </div>
           </div>
 
@@ -159,16 +184,32 @@ export default function UsersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
-                {users.map((user) => (
+<tbody className="divide-y divide-border">
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                        No users found matching "{userSearchQuery}"
+                      </td>
+                    </tr>
+                  ) : filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
+<td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary-foreground">
-                            {user.name.split(" ").map(n => n[0]).join("")}
-                          </span>
-                        </div>
+                        {user.photo ? (
+                          <div className="h-10 w-10 rounded-full overflow-hidden">
+                            <img 
+                              src={user.photo} 
+                              alt={user.name} 
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary-foreground">
+                              {user.name.split(" ").map(n => n[0]).join("")}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <div className="font-medium text-foreground">{user.name}</div>
                           <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -210,7 +251,10 @@ export default function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => openProfileDialog(user)}
+                          >
                             <User className="h-4 w-4" />
                             View Profile
                           </DropdownMenuItem>
@@ -218,7 +262,14 @@ export default function UsersPage() {
                             <Mail className="h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                          <DropdownMenuItem 
+                            className="gap-2 cursor-pointer"
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setSelectedRole(user.role)
+                              setShowRoleDialog(true)
+                            }}
+                          >
                             <RefreshCw className="h-4 w-4" />
                             Change Role
                           </DropdownMenuItem>
@@ -232,6 +283,208 @@ export default function UsersPage() {
           </div>
         </div>
       </main>
+
+      {/* Change Role Dialog */}
+      <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Role</DialogTitle>
+            <DialogDescription>
+              Select a new role for {selectedUser?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-2">
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  onClick={() => setSelectedRole(role.name)}
+                  className={`w-full p-4 rounded-lg border text-left transition-all ${
+                    selectedRole === role.name
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-accent/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`${role.color} h-3 w-3 rounded-full`} />
+                      <div>
+                        <p className="font-medium text-foreground">{role.name}</p>
+                        <p className="text-sm text-muted-foreground">{role.description}</p>
+                      </div>
+                    </div>
+                    {selectedRole === role.name && (
+                      <Check className="h-5 w-5 text-accent" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowRoleDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedUser && selectedRole) {
+                  const roleData = roles.find(r => r.name === selectedRole)
+                  setUsers(prevUsers => 
+                    prevUsers.map(user => 
+                      user.id === selectedUser.id 
+                        ? { ...user, role: selectedRole, roleColor: roleData?.color || user.roleColor }
+                        : user
+                    )
+                  )
+                }
+                setShowRoleDialog(false)
+              }}
+              disabled={!selectedRole || selectedRole === selectedUser?.role}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Profile Dialog */}
+      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>User Profile</DialogTitle>
+            <DialogDescription>
+              View and edit user profile information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-6">
+            {/* Photo Upload */}
+            <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group"
+              >
+                {editPhoto ? (
+                  <div className="h-24 w-24 rounded-full overflow-hidden">
+                    <img 
+                      src={editPhoto} 
+                      alt={editName} 
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-24 w-24 rounded-full bg-accent flex items-center justify-center text-white text-2xl font-semibold">
+                    {getInitials(editName)}
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <p className="text-sm text-muted-foreground">Click to upload photo</p>
+            </div>
+
+            {/* Editable Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="profile-name">Name</Label>
+                <Input
+                  id="profile-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile-email">Email Address</Label>
+                <Input
+                  id="profile-email"
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profile-role">Role</Label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        <div className="flex items-center gap-2">
+                          <div className={`${role.color} h-2 w-2 rounded-full`} />
+                          {role.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Read-only Fields */}
+              <div className="pt-4 border-t space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Status</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    selectedUser?.status === "Active" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-gray-100 text-gray-800"
+                  }`}>
+                    {selectedUser?.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Last Active</span>
+                  <span className="text-sm text-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selectedUser?.lastActive}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowProfileDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (selectedUser) {
+                const roleData = roles.find(r => r.name === editRole)
+                setUsers(prevUsers => 
+                  prevUsers.map(user => 
+                    user.id === selectedUser.id 
+                      ? { 
+                          ...user, 
+                          name: editName, 
+                          email: editEmail, 
+                          role: editRole, 
+                          roleColor: roleData?.color || user.roleColor,
+                          photo: editPhoto || undefined
+                        }
+                      : user
+                  )
+                )
+              }
+              setShowProfileDialog(false)
+            }}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
