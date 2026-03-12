@@ -606,7 +606,10 @@ export default function PricingCommunicationPage() {
                           Approved
                         </span>
                       ) : (
-                        <Button onClick={() => setDataApproved(true)} className="gap-2">
+                        <Button onClick={() => {
+                          setDataApproved(true)
+                          setActiveSection("email")
+                        }} className="gap-2">
                           <CheckCircle className="h-4 w-4" />
                           Approve Data
                         </Button>
@@ -712,9 +715,12 @@ export default function PricingCommunicationPage() {
                             <Button variant="outline" onClick={clearAllData}>
                               Reject
                             </Button>
-                            <Button onClick={() => setDataApproved(true)}>
-                              Approve Data
-                            </Button>
+<Button onClick={() => {
+                    setDataApproved(true)
+                    setActiveSection("email")
+                  }}>
+                  Approve Data
+                  </Button>
                           </div>
                         )}
                         {dataApproved && (
