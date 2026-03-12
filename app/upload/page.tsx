@@ -78,7 +78,7 @@ export default function PricingCommunicationPage() {
   const [activeSection, setActiveSection] = useState<ActiveSection>("upload")
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const [ingestedData, setIngestedData] = useState<PricingItem[]>(samplePricingData)
+  const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
   const [isIngesting, setIsIngesting] = useState(false)
   const [dataApproved, setDataApproved] = useState(false)
   
