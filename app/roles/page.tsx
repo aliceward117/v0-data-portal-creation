@@ -57,6 +57,13 @@ export default function RolesPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [newRolePermissions, setNewRolePermissions] = useState<string[]>([])
   const [newPermissionSearch, setNewPermissionSearch] = useState("")
+  const [roleSearchQuery, setRoleSearchQuery] = useState("")
+
+  // Filter roles based on search query
+  const filteredRoles = roles.filter(role => 
+    role.name.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
+    role.description.toLowerCase().includes(roleSearchQuery.toLowerCase())
+  )
 
   const openEditDialog = (role: RoleType) => {
     setSelectedRole(role)
@@ -224,13 +231,23 @@ export default function RolesPage() {
           <div className="mb-6 flex items-center gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search roles..." className="pl-10" />
+              <Input 
+              placeholder="Search roles..." 
+              className="pl-10" 
+              value={roleSearchQuery}
+              onChange={(e) => setRoleSearchQuery(e.target.value)}
+            />
             </div>
           </div>
 
-          {/* Roles Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {roles.map((role) => (
+{/* Roles Grid */}
+          {filteredRoles.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No roles found matching "{roleSearchQuery}"</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredRoles.map((role) => (
               <div
                 key={role.id}
                 className="p-6 bg-card border border-border rounded-lg hover:border-primary transition-all"
@@ -254,12 +271,13 @@ export default function RolesPage() {
                   <Users className="h-4 w-4" />
                   <span>{getUsersByRole(role.name).length} users</span>
                 </div>
-              </div>
-            ))}
-          </div>
+</div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
-
+      
       {/* Edit Role Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
