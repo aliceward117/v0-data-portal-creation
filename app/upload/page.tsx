@@ -432,6 +432,7 @@ export default function PricingCommunicationPage() {
               f.id === fileId ? { ...f, previewData } : f
             )
           )
+        }
 
         setTimeout(async () => {
           setFiles((prev) =>
