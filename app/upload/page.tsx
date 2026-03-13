@@ -6,6 +6,14 @@ import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -82,6 +90,11 @@ export default function PricingCommunicationPage() {
   const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
   const [isIngesting, setIsIngesting] = useState(false)
   const [dataApproved, setDataApproved] = useState(false)
+  
+  // Price type selection state
+  const [showPriceTypeDialog, setShowPriceTypeDialog] = useState(false)
+  const [selectedPriceType, setSelectedPriceType] = useState<"fixed" | "bandA" | null>(null)
+  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null)
   
   // Email state
   const [emailRecipient, setEmailRecipient] = useState("")
@@ -384,9 +397,15 @@ export default function PricingCommunicationPage() {
     return validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
   }
 
-  const processFiles = useCallback(async (fileList: FileList | null) => {
-    if (!fileList) return
+// Show price type dialog before processing files
+  const handleFilesSelected = useCallback((fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return
+    setPendingFiles(fileList)
+    setShowPriceTypeDialog(true)
+  }, [])
 
+  // Process files after price type is selected
+  const processFilesWithPriceType = useCallback(async (fileList: FileList, priceType: "fixed" | "bandA") => {
     const fileArray = Array.from(fileList)
     
     for (const file of fileArray) {
@@ -402,18 +421,17 @@ export default function PricingCommunicationPage() {
         errorMessage: isValid ? undefined : "Invalid file type. Please upload CSV files only.",
         file: file,
       }
-
+      
       setFiles((prev) => [...prev, newFile])
-
+      
       if (isValid) {
-          if (isSpreadsheetFile(file.name)) {
-            const previewData = await readFilePreview(file)
+        if (isSpreadsheetFile(file.name)) {
+          const previewData = await readFilePreview(file)
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId ? { ...f, previewData } : f
             )
           )
-        }
 
         setTimeout(async () => {
           setFiles((prev) =>
@@ -440,6 +458,22 @@ export default function PricingCommunicationPage() {
     }
   }, [])
 
+  // Handler for when user confirms price type selection
+  const handlePriceTypeConfirm = useCallback(() => {
+    if (pendingFiles && selectedPriceType) {
+      processFilesWithPriceType(pendingFiles, selectedPriceType)
+      setShowPriceTypeDialog(false)
+      setPendingFiles(null)
+      // Note: selectedPriceType is kept so it can be used for the stored procedure
+    }
+  }, [pendingFiles, selectedPriceType, processFilesWithPriceType])
+
+  const handlePriceTypeCancel = useCallback(() => {
+    setShowPriceTypeDialog(false)
+    setPendingFiles(null)
+    setSelectedPriceType(null)
+  }, [])
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -454,17 +488,17 @@ export default function PricingCommunicationPage() {
     (e: React.DragEvent) => {
       e.preventDefault()
       setIsDragging(false)
-      processFiles(e.dataTransfer.files)
+      handleFilesSelected(e.dataTransfer.files)
     },
-    [processFiles]
+    [handleFilesSelected]
   )
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      processFiles(e.target.files)
+      handleFilesSelected(e.target.files)
       e.target.value = ""
     },
-    [processFiles]
+    [handleFilesSelected]
   )
 
   const removeFile = (id: string) => {
@@ -1184,6 +1218,88 @@ export default function PricingCommunicationPage() {
           )}
         </main>
       </div>
+
+      {/* Price Type Selection Dialog */}
+      <Dialog open={showPriceTypeDialog} onOpenChange={(open) => {
+        if (!open) handlePriceTypeCancel()
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Price Type</DialogTitle>
+            <DialogDescription>
+              Choose the pricing type for this file. This determines which stored procedure will be used to process the data.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-3">
+            <button
+              onClick={() => setSelectedPriceType("fixed")}
+              className={`w-full p-4 border rounded-lg text-left transition-all ${
+                selectedPriceType === "fixed"
+                  ? "border-accent bg-accent/5 ring-1 ring-accent"
+                  : "border-border hover:border-accent/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Fixed Price</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Standard fixed pricing for all customers
+                  </p>
+                </div>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                  selectedPriceType === "fixed"
+                    ? "border-accent bg-accent"
+                    : "border-muted-foreground/30"
+                }`}>
+                  {selectedPriceType === "fixed" && (
+                    <CheckCircle className="h-3 w-3 text-white" />
+                  )}
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setSelectedPriceType("bandA")}
+              className={`w-full p-4 border rounded-lg text-left transition-all ${
+                selectedPriceType === "bandA"
+                  ? "border-accent bg-accent/5 ring-1 ring-accent"
+                  : "border-border hover:border-accent/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Band A</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Tiered pricing based on volume bands
+                  </p>
+                </div>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                  selectedPriceType === "bandA"
+                    ? "border-accent bg-accent"
+                    : "border-muted-foreground/30"
+                }`}>
+                  {selectedPriceType === "bandA" && (
+                    <CheckCircle className="h-3 w-3 text-white" />
+                  )}
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={handlePriceTypeCancel}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePriceTypeConfirm}
+              disabled={!selectedPriceType}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
