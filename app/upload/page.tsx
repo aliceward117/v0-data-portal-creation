@@ -6,6 +6,14 @@ import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -82,6 +90,11 @@ export default function PricingCommunicationPage() {
   const [ingestedData, setIngestedData] = useState<PricingItem[]>([])
   const [isIngesting, setIsIngesting] = useState(false)
   const [dataApproved, setDataApproved] = useState(false)
+  
+  // Price type selection state
+  const [showPriceTypeDialog, setShowPriceTypeDialog] = useState(false)
+  const [selectedPriceType, setSelectedPriceType] = useState<"fixed" | "bandA" | null>(null)
+  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null)
   
   // Email state
   const [emailRecipient, setEmailRecipient] = useState("")
@@ -208,6 +221,8 @@ export default function PricingCommunicationPage() {
 
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [previewExpanded, setPreviewExpanded] = useState(true)
+  const [isSendingCampaign, setIsSendingCampaign] = useState(false)
+  const [campaignSent, setCampaignSent] = useState(false)
   const [externalSubSection, setExternalSubSection] = useState<"preview" | "history">("preview")
 
   // Page history data
@@ -250,6 +265,53 @@ export default function PricingCommunicationPage() {
       url: "/pricing/jan-2026",
     },
   ])
+
+  // Function to send campaign and add to email history
+  const handleSendCampaign = useCallback(() => {
+    if (!selectedCampaign) return
+    
+    setIsSendingCampaign(true)
+    
+    // Simulate sending the campaign
+    setTimeout(() => {
+      // Generate recipient emails for this campaign
+      const generateRecipients = (count: number) => {
+        const firstNames = ["john", "jane", "michael", "sarah", "david", "emma", "james", "olivia", "william", "sophia"]
+        const lastNames = ["smith", "jones", "williams", "brown", "taylor", "davies", "wilson", "evans", "thomas", "roberts"]
+        const domains = ["restaurant.co.uk", "cafe.com", "bistro.net", "eatery.co.uk", "diner.com"]
+        
+        return Array.from({ length: count }, (_, i) => {
+          const firstName = firstNames[i % firstNames.length]
+          const lastName = lastNames[Math.floor(i / firstNames.length) % lastNames.length]
+          const domain = domains[i % domains.length]
+          return `${firstName}.${lastName}${i > 9 ? i : ""}@${domain}`
+        })
+      }
+      
+      // Create new email history entry
+      const newHistoryEntry: EmailHistoryItem = {
+        id: crypto.randomUUID(),
+        sentDate: new Date(),
+        sentBy: "Marketing Team",
+        recipientCount: selectedCampaign.recipientCount,
+        recipients: generateRecipients(selectedCampaign.recipientCount),
+        subject: selectedCampaign.subject,
+        status: "Delivered",
+      }
+      
+      // Add to email history
+      setEmailHistory(prev => [newHistoryEntry, ...prev])
+      
+      setIsSendingCampaign(false)
+      setCampaignSent(true)
+      
+      // Reset after 5 seconds so user can send again if needed
+      setTimeout(() => {
+        setCampaignSent(false)
+        setSelectedCampaign(null)
+      }, 5000)
+    }, 2000) // Simulate 2 second sending time
+  }, [selectedCampaign])
 
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
@@ -384,9 +446,15 @@ export default function PricingCommunicationPage() {
     return validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
   }
 
-  const processFiles = useCallback(async (fileList: FileList | null) => {
-    if (!fileList) return
+// Show price type dialog before processing files
+  const handleFilesSelected = useCallback((fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return
+    setPendingFiles(fileList)
+    setShowPriceTypeDialog(true)
+  }, [])
 
+  // Process files after price type is selected
+  const processFilesWithPriceType = useCallback(async (fileList: FileList, priceType: "fixed" | "bandA") => {
     const fileArray = Array.from(fileList)
     
     for (const file of fileArray) {
@@ -402,12 +470,12 @@ export default function PricingCommunicationPage() {
         errorMessage: isValid ? undefined : "Invalid file type. Please upload CSV files only.",
         file: file,
       }
-
+      
       setFiles((prev) => [...prev, newFile])
-
+      
       if (isValid) {
-          if (isSpreadsheetFile(file.name)) {
-            const previewData = await readFilePreview(file)
+        if (isSpreadsheetFile(file.name)) {
+          const previewData = await readFilePreview(file)
           setFiles((prev) =>
             prev.map((f) =>
               f.id === fileId ? { ...f, previewData } : f
@@ -438,6 +506,22 @@ export default function PricingCommunicationPage() {
         }, 1500 + Math.random() * 1000)
       }
     }
+  }, [ingestPricingData])
+
+  // Handler for when user confirms price type selection
+  const handlePriceTypeConfirm = useCallback(() => {
+    if (pendingFiles && selectedPriceType) {
+      processFilesWithPriceType(pendingFiles, selectedPriceType)
+      setShowPriceTypeDialog(false)
+      setPendingFiles(null)
+      // Note: selectedPriceType is kept so it can be used for the stored procedure
+    }
+  }, [pendingFiles, selectedPriceType, processFilesWithPriceType])
+
+  const handlePriceTypeCancel = useCallback(() => {
+    setShowPriceTypeDialog(false)
+    setPendingFiles(null)
+    setSelectedPriceType(null)
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -454,17 +538,17 @@ export default function PricingCommunicationPage() {
     (e: React.DragEvent) => {
       e.preventDefault()
       setIsDragging(false)
-      processFiles(e.dataTransfer.files)
+      handleFilesSelected(e.dataTransfer.files)
     },
-    [processFiles]
+    [handleFilesSelected]
   )
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      processFiles(e.target.files)
+      handleFilesSelected(e.target.files)
       e.target.value = ""
     },
-    [processFiles]
+    [handleFilesSelected]
   )
 
   const removeFile = (id: string) => {
@@ -905,18 +989,45 @@ export default function PricingCommunicationPage() {
                           Edit in Mailchimp
                         </Button>
                       </a>
-                      <a 
-                        href="https://mailchimp.com/features/email/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        <Button className="gap-2">
-                          <Send className="h-4 w-4" />
-                          Send Campaign
+                      {campaignSent ? (
+                        <Button className="gap-2 bg-green-600 hover:bg-green-600" disabled>
+                          <CheckCircle className="h-4 w-4" />
+                          Campaign Sent
                         </Button>
-                      </a>
+                      ) : (
+                        <Button 
+                          className="gap-2" 
+                          onClick={handleSendCampaign}
+                          disabled={isSendingCampaign}
+                        >
+                          {isSendingCampaign ? (
+                            <>
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4" />
+                              Send Campaign
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
+
+                  {/* Success Message */}
+                  {campaignSent && (
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-800">Campaign sent successfully!</p>
+                        <p className="text-sm text-green-600">
+                          Your campaign "{selectedCampaign?.name}" has been sent to {selectedCampaign?.recipientCount} recipients. Check Email History for details.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Email Preview - Collapsible */}
                   {previewExpanded && (
@@ -1184,6 +1295,88 @@ export default function PricingCommunicationPage() {
           )}
         </main>
       </div>
+
+      {/* Price Type Selection Dialog */}
+      <Dialog open={showPriceTypeDialog} onOpenChange={(open) => {
+        if (!open) handlePriceTypeCancel()
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Price Type</DialogTitle>
+            <DialogDescription>
+              Choose the pricing type for this file. This determines which stored procedure will be used to process the data.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-3">
+            <button
+              onClick={() => setSelectedPriceType("fixed")}
+              className={`w-full p-4 border rounded-lg text-left transition-all ${
+                selectedPriceType === "fixed"
+                  ? "border-accent bg-accent/5 ring-1 ring-accent"
+                  : "border-border hover:border-accent/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Fixed Price</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Standard fixed pricing for all customers
+                  </p>
+                </div>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                  selectedPriceType === "fixed"
+                    ? "border-accent bg-accent"
+                    : "border-muted-foreground/30"
+                }`}>
+                  {selectedPriceType === "fixed" && (
+                    <CheckCircle className="h-3 w-3 text-white" />
+                  )}
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setSelectedPriceType("bandA")}
+              className={`w-full p-4 border rounded-lg text-left transition-all ${
+                selectedPriceType === "bandA"
+                  ? "border-accent bg-accent/5 ring-1 ring-accent"
+                  : "border-border hover:border-accent/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Band A</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Tiered pricing based on volume bands
+                  </p>
+                </div>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                  selectedPriceType === "bandA"
+                    ? "border-accent bg-accent"
+                    : "border-muted-foreground/30"
+                }`}>
+                  {selectedPriceType === "bandA" && (
+                    <CheckCircle className="h-3 w-3 text-white" />
+                  )}
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={handlePriceTypeCancel}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePriceTypeConfirm}
+              disabled={!selectedPriceType}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
