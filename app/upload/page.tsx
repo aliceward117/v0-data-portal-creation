@@ -221,6 +221,8 @@ export default function PricingCommunicationPage() {
 
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [previewExpanded, setPreviewExpanded] = useState(true)
+  const [isSendingCampaign, setIsSendingCampaign] = useState(false)
+  const [campaignSent, setCampaignSent] = useState(false)
   const [externalSubSection, setExternalSubSection] = useState<"preview" | "history">("preview")
 
   // Page history data
@@ -263,6 +265,53 @@ export default function PricingCommunicationPage() {
       url: "/pricing/jan-2026",
     },
   ])
+
+  // Function to send campaign and add to email history
+  const handleSendCampaign = useCallback(() => {
+    if (!selectedCampaign) return
+    
+    setIsSendingCampaign(true)
+    
+    // Simulate sending the campaign
+    setTimeout(() => {
+      // Generate recipient emails for this campaign
+      const generateRecipients = (count: number) => {
+        const firstNames = ["john", "jane", "michael", "sarah", "david", "emma", "james", "olivia", "william", "sophia"]
+        const lastNames = ["smith", "jones", "williams", "brown", "taylor", "davies", "wilson", "evans", "thomas", "roberts"]
+        const domains = ["restaurant.co.uk", "cafe.com", "bistro.net", "eatery.co.uk", "diner.com"]
+        
+        return Array.from({ length: count }, (_, i) => {
+          const firstName = firstNames[i % firstNames.length]
+          const lastName = lastNames[Math.floor(i / firstNames.length) % lastNames.length]
+          const domain = domains[i % domains.length]
+          return `${firstName}.${lastName}${i > 9 ? i : ""}@${domain}`
+        })
+      }
+      
+      // Create new email history entry
+      const newHistoryEntry: EmailHistoryItem = {
+        id: crypto.randomUUID(),
+        sentDate: new Date(),
+        sentBy: "Marketing Team",
+        recipientCount: selectedCampaign.recipientCount,
+        recipients: generateRecipients(selectedCampaign.recipientCount),
+        subject: selectedCampaign.subject,
+        status: "Delivered",
+      }
+      
+      // Add to email history
+      setEmailHistory(prev => [newHistoryEntry, ...prev])
+      
+      setIsSendingCampaign(false)
+      setCampaignSent(true)
+      
+      // Reset after 5 seconds so user can send again if needed
+      setTimeout(() => {
+        setCampaignSent(false)
+        setSelectedCampaign(null)
+      }, 5000)
+    }, 2000) // Simulate 2 second sending time
+  }, [selectedCampaign])
 
   const exportSingleEmailToCSV = (item: EmailHistoryItem) => {
     const headers = ["Date", "Time", "Sent By", "Recipient Email", "Subject", "Status"]
@@ -940,18 +989,45 @@ export default function PricingCommunicationPage() {
                           Edit in Mailchimp
                         </Button>
                       </a>
-                      <a 
-                        href="https://mailchimp.com/features/email/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        <Button className="gap-2">
-                          <Send className="h-4 w-4" />
-                          Send Campaign
+                      {campaignSent ? (
+                        <Button className="gap-2 bg-green-600 hover:bg-green-600" disabled>
+                          <CheckCircle className="h-4 w-4" />
+                          Campaign Sent
                         </Button>
-                      </a>
+                      ) : (
+                        <Button 
+                          className="gap-2" 
+                          onClick={handleSendCampaign}
+                          disabled={isSendingCampaign}
+                        >
+                          {isSendingCampaign ? (
+                            <>
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4" />
+                              Send Campaign
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
+
+                  {/* Success Message */}
+                  {campaignSent && (
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-800">Campaign sent successfully!</p>
+                        <p className="text-sm text-green-600">
+                          Your campaign "{selectedCampaign?.name}" has been sent to {selectedCampaign?.recipientCount} recipients. Check Email History for details.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Email Preview - Collapsible */}
                   {previewExpanded && (
