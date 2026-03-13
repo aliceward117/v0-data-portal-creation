@@ -457,7 +457,7 @@ export default function PricingCommunicationPage() {
         }, 1500 + Math.random() * 1000)
       }
     }
-  }, [])
+  }, [ingestPricingData])
 
   // Handler for when user confirms price type selection
   const handlePriceTypeConfirm = useCallback(() => {
