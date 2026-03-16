@@ -408,26 +408,95 @@ export default function PricingCommunicationPage() {
       const rows = fullData.slice(1)
       
       // Find column indices (flexible matching)
-      const codeIdx = headers.findIndex(h => h.includes("code") || h.includes("sku") || h.includes("id") || h.includes("product"))
-      const currentPriceIdx = headers.findIndex(h => h.includes("current") && h.includes("price"))
-      const newPriceIdx = headers.findIndex(h => (h.includes("new") && h.includes("price")) || h.includes("price"))
-      const dateIdx = headers.findIndex(h => h.includes("date") || h.includes("live") || h.includes("effective"))
+      const codeIdx = headers.findIndex(h => 
+        h.includes("code") || h.includes("sku") || h.includes("id") || h.includes("product") || h.includes("item")
+      )
+      
+      // Current price - look for "current", "old", "previous", or just "price" if it's the first price column
+      const currentPriceIdx = headers.findIndex(h => 
+        (h.includes("current") && h.includes("price")) || 
+        (h.includes("old") && h.includes("price")) ||
+        (h.includes("previous") && h.includes("price")) ||
+        h === "current price" || h === "currentprice" ||
+        h === "old price" || h === "oldprice"
+      )
+      
+      // New price - look for "new", "updated", or "price" that's not already matched
+      let newPriceIdx = headers.findIndex(h => 
+        (h.includes("new") && h.includes("price")) || 
+        (h.includes("updated") && h.includes("price")) ||
+        h === "new price" || h === "newprice" ||
+        h === "price"
+      )
+      
+      // If we found the same column for both, find the next price column for new price
+      if (newPriceIdx === currentPriceIdx && currentPriceIdx >= 0) {
+        newPriceIdx = headers.findIndex((h, idx) => 
+          idx !== currentPriceIdx && (h.includes("price") || h.includes("cost") || h.includes("amount"))
+        )
+      }
+      
+      // If we only found one price column and no current price, use it for both (or just new)
+      if (currentPriceIdx < 0 && newPriceIdx >= 0) {
+        // Look for a second price-like column
+        const secondPriceIdx = headers.findIndex((h, idx) => 
+          idx !== newPriceIdx && (h.includes("price") || h.includes("cost") || h.includes("amount") || !isNaN(parseFloat(h)))
+        )
+        if (secondPriceIdx >= 0) {
+          // Assume first is current, second is new
+          // Actually, let's just use the columns in order if we have two numeric columns
+        }
+      }
+      
+      const dateIdx = headers.findIndex(h => 
+        h.includes("date") || h.includes("live") || h.includes("effective") || h.includes("from") || h.includes("start")
+      )
+      
+      // If no specific columns found, try to find numeric columns for prices
+      let effectiveCurrentPriceIdx = currentPriceIdx
+      let effectiveNewPriceIdx = newPriceIdx
+      
+      if (effectiveCurrentPriceIdx < 0 || effectiveNewPriceIdx < 0) {
+        // Find all columns that look like they contain prices (numeric values)
+        const numericColIndices = headers.map((h, idx) => {
+          const sampleValue = rows[0]?.[idx]
+          const hasNumeric = sampleValue && !isNaN(parseFloat(sampleValue.replace(/[^0-9.-]/g, "")))
+          return hasNumeric ? idx : -1
+        }).filter(idx => idx >= 0 && idx !== codeIdx && idx !== dateIdx)
+        
+        if (numericColIndices.length >= 2) {
+          if (effectiveCurrentPriceIdx < 0) effectiveCurrentPriceIdx = numericColIndices[0]
+          if (effectiveNewPriceIdx < 0) effectiveNewPriceIdx = numericColIndices[1]
+        } else if (numericColIndices.length === 1) {
+          if (effectiveNewPriceIdx < 0) effectiveNewPriceIdx = numericColIndices[0]
+        }
+      }
       
       const newItems: PricingItem[] = rows
         .filter(row => row.some(cell => cell.trim()))
-        .map((row, index) => ({
-          id: crypto.randomUUID(),
-          code: codeIdx >= 0 ? row[codeIdx] || `ITEM-${index + 1}` : `ITEM-${index + 1}`,
-          currentPrice: currentPriceIdx >= 0 ? parseFloat(row[currentPriceIdx]?.replace(/[^0-9.-]/g, "")) || 0 : 0,
-          newPrice: newPriceIdx >= 0 ? parseFloat(row[newPriceIdx]?.replace(/[^0-9.-]/g, "")) || 0 : 0,
-          liveDate: dateIdx >= 0 ? row[dateIdx] || "TBD" : "TBD",
-          sourceFile: file.name,
-          ingestedAt: new Date(),
-        }))
+        .map((row, index) => {
+          const parsePrice = (val: string | undefined): number => {
+            if (!val) return 0
+            const cleaned = val.replace(/[^0-9.-]/g, "")
+            return parseFloat(cleaned) || 0
+          }
+          
+          return {
+            id: crypto.randomUUID(),
+            code: codeIdx >= 0 ? (row[codeIdx]?.trim() || `ITEM-${index + 1}`) : `ITEM-${index + 1}`,
+            currentPrice: effectiveCurrentPriceIdx >= 0 ? parsePrice(row[effectiveCurrentPriceIdx]) : 0,
+            newPrice: effectiveNewPriceIdx >= 0 ? parsePrice(row[effectiveNewPriceIdx]) : 0,
+            liveDate: dateIdx >= 0 ? (row[dateIdx]?.trim() || "TBD") : "TBD",
+            sourceFile: file.name,
+            ingestedAt: new Date(),
+          }
+        })
       
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      setIngestedData(prev => [...prev, ...newItems])
+      // Replace existing data with new data from the uploaded file
+      setIngestedData(newItems)
+      setDataApproved(false) // Reset approval status when new data is uploaded
     } finally {
       setIsIngesting(false)
     }
