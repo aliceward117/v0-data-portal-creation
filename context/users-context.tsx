@@ -161,6 +161,15 @@ const initialUsers: UserType[] = [
     lastActive: "2 days ago",
     status: "Active",
   },
+  {
+    id: 7,
+    name: "Joe Bloggs",
+    email: "joe.bloggs@albion.com",
+    role: "Data Analyst",
+    roleColor: "bg-[#f6d06f]",
+    lastActive: "30 minutes ago",
+    status: "Active",
+  },
 ]
 
 const UsersContext = createContext<UsersContextType | undefined>(undefined)
