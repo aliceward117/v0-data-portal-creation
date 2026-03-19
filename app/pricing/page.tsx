@@ -47,7 +47,7 @@ const fixedPriceData = [
   { id: "29", code: "CELERYHEAD", currentPrice: 0.95, newPrice: 0.97, liveDate: "01.03.26" },
 ]
 
-// Band A data - tiered pricing based on volume bands (discounted rates)
+// List Prices data - tiered pricing based on volume bands (discounted rates)
 const bandAPriceData = [
   { id: "1", code: "ANTIBAC", currentPrice: 2.49, newPrice: 2.59, liveDate: "01.03.26" },
   { id: "2", code: "ANTIBAC750", currentPrice: 1.69, newPrice: 1.89, liveDate: "01.03.26" },
@@ -281,7 +281,7 @@ export default function PublicPricingPage() {
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                Band A
+                List Prices
               </button>
             </div>
           </div>
@@ -291,7 +291,7 @@ export default function PublicPricingPage() {
               <h2 className="text-xl font-semibold">
                 Product Pricing Schedule 
                 <span className="ml-2 text-sm font-normal text-[#00B894]">
-                  ({priceType === "fixed" ? "Fixed Price" : "Band A"})
+                  ({priceType === "fixed" ? "Fixed Price" : "List Prices"})
                 </span>
               </h2>
               <p className="text-gray-300 text-sm mt-1">
