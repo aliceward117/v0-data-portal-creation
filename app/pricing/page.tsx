@@ -14,8 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-// Sample pricing data - in production this would come from a database or API
-const pricingData = [
+// Fixed Price data - standard pricing for all customers
+const fixedPriceData = [
   { id: "1", code: "ANTIBAC", currentPrice: 2.79, newPrice: 2.89, liveDate: "01.03.26" },
   { id: "2", code: "ANTIBAC750", currentPrice: 1.89, newPrice: 2.19, liveDate: "01.03.26" },
   { id: "3", code: "APPLEF1", currentPrice: 2.29, newPrice: 2.49, liveDate: "01.03.26" },
@@ -47,6 +47,39 @@ const pricingData = [
   { id: "29", code: "CELERYHEAD", currentPrice: 0.95, newPrice: 0.97, liveDate: "01.03.26" },
 ]
 
+// Band A data - tiered pricing based on volume bands (discounted rates)
+const bandAPriceData = [
+  { id: "1", code: "ANTIBAC", currentPrice: 2.49, newPrice: 2.59, liveDate: "01.03.26" },
+  { id: "2", code: "ANTIBAC750", currentPrice: 1.69, newPrice: 1.89, liveDate: "01.03.26" },
+  { id: "3", code: "APPLEF1", currentPrice: 1.99, newPrice: 2.19, liveDate: "01.03.26" },
+  { id: "4", code: "APPLEJM", currentPrice: 7.49, newPrice: 9.29, liveDate: "01.03.26" },
+  { id: "5", code: "AVOCADOFRRIPE", currentPrice: 0.89, newPrice: 0.89, liveDate: "01.03.26" },
+  { id: "6", code: "BAGPAP8.5", currentPrice: 14.99, newPrice: 14.99, liveDate: "01.03.26" },
+  { id: "7", code: "BAKEWELL", currentPrice: 5.59, newPrice: 5.59, liveDate: "01.03.26" },
+  { id: "8", code: "BANANAFR", currentPrice: 1.49, newPrice: 1.49, liveDate: "01.03.26" },
+  { id: "9", code: "BATHROOMCLEANER", currentPrice: 2.09, newPrice: 2.09, liveDate: "01.03.26" },
+  { id: "10", code: "BEERLINECLEA5", currentPrice: 11.99, newPrice: 11.99, liveDate: "01.03.26" },
+  { id: "11", code: "BEETROOTJUICE", currentPrice: 2.89, newPrice: 2.95, liveDate: "01.03.26" },
+  { id: "12", code: "BISCLOTUS", currentPrice: 14.99, newPrice: 15.69, liveDate: "01.03.26" },
+  { id: "13", code: "BLEACHTHICK5", currentPrice: 4.29, newPrice: 4.69, liveDate: "01.03.26" },
+  { id: "14", code: "BLUEBERRFR", currentPrice: 1.59, newPrice: 1.65, liveDate: "01.03.26" },
+  { id: "15", code: "BLUEBERRFZ", currentPrice: 5.39, newPrice: 5.39, liveDate: "01.03.26" },
+  { id: "16", code: "BLUETOWEL", currentPrice: 10.49, newPrice: 8.49, liveDate: "01.03.26" },
+  { id: "17", code: "BREADMALTBLOOM", currentPrice: 1.89, newPrice: 1.89, liveDate: "01.03.26" },
+  { id: "18", code: "BREADWHOLTHCF", currentPrice: 1.59, newPrice: 1.59, liveDate: "01.03.26" },
+  { id: "19", code: "BREADWHTHCF", currentPrice: 1.59, newPrice: 1.59, liveDate: "01.03.26" },
+  { id: "20", code: "BRUSHWIRE", currentPrice: 4.29, newPrice: 4.29, liveDate: "01.03.26" },
+  { id: "21", code: "BURRATAV100", currentPrice: 1.45, newPrice: 1.45, liveDate: "01.03.26" },
+  { id: "22", code: "BUTTBEANSA10", currentPrice: 3.99, newPrice: 3.99, liveDate: "01.03.26" },
+  { id: "23", code: "CAKEFDAPPLE", currentPrice: 14.29, newPrice: 14.29, liveDate: "01.03.26" },
+  { id: "24", code: "CAKEFDPECAN", currentPrice: 13.69, newPrice: 14.29, liveDate: "01.03.26" },
+  { id: "25", code: "CAKEFRCARR", currentPrice: 13.89, newPrice: 13.89, liveDate: "01.03.26" },
+  { id: "26", code: "CAKEFRCHOC", currentPrice: 16.79, newPrice: 17.29, liveDate: "01.03.26" },
+  { id: "27", code: "CAPERSLILI", currentPrice: 13.39, newPrice: 13.39, liveDate: "01.03.26" },
+  { id: "28", code: "CAWSAPPLE", currentPrice: 20.49, newPrice: 20.49, liveDate: "01.03.26" },
+  { id: "29", code: "CELERYHEAD", currentPrice: 0.79, newPrice: 0.82, liveDate: "01.03.26" },
+]
+
 const navCategories = [
   "Spotlight", "Chilled", "Store Cupboard", "Fresh Fruit & Veg", 
   "Drinks", "Frozen", "Non-Food", "REFINED", "What's New?", "About Us"
@@ -54,6 +87,7 @@ const navCategories = [
 
 export default function PublicPricingPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [priceType, setPriceType] = useState<"fixed" | "bandA">("fixed")
   
   const effectiveDate = "1st March 2026"
   const lastUpdated = new Date().toLocaleDateString('en-GB', { 
@@ -62,6 +96,8 @@ export default function PublicPricingPage() {
     year: 'numeric' 
   })
 
+  const pricingData = priceType === "fixed" ? fixedPriceData : bandAPriceData
+  
   const filteredData = pricingData.filter(item => 
     item.code.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -223,9 +259,41 @@ export default function PublicPricingPage() {
 
         {/* Pricing Table */}
         <Card className="overflow-hidden border-0 shadow-lg">
+          {/* Price Type Toggle */}
+          <div className="p-4 border-b bg-gray-50 flex items-center justify-center gap-2">
+            <span className="text-sm text-gray-600 mr-2">View pricing for:</span>
+            <div className="flex gap-1 p-1 bg-gray-200 rounded-lg">
+              <button
+                onClick={() => setPriceType("fixed")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  priceType === "fixed"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Fixed Price
+              </button>
+              <button
+                onClick={() => setPriceType("bandA")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  priceType === "bandA"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Band A
+              </button>
+            </div>
+          </div>
+          
           <div className="p-6 border-b bg-[#2D3436] text-white flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Product Pricing Schedule</h2>
+              <h2 className="text-xl font-semibold">
+                Product Pricing Schedule 
+                <span className="ml-2 text-sm font-normal text-[#00B894]">
+                  ({priceType === "fixed" ? "Fixed Price" : "Band A"})
+                </span>
+              </h2>
               <p className="text-gray-300 text-sm mt-1">
                 {filteredData.length} products {searchQuery && `matching "${searchQuery}"`}
               </p>
