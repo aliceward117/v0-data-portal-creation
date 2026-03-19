@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, ChevronDown } from "lucide-react"
+import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, ChevronDown, Download } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
@@ -64,6 +65,36 @@ export default function PublicPricingPage() {
   const filteredData = pricingData.filter(item => 
     item.code.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Export pricing data to CSV
+  const exportToCSV = () => {
+    const headers = ["Product Code", "Current Price", "New Price", "Change (%)", "Effective Date"]
+    const csvRows = [
+      headers.join(","),
+      ...filteredData.map(item => {
+        const change = item.newPrice - item.currentPrice
+        const changePercent = ((change / item.currentPrice) * 100).toFixed(1)
+        return [
+          item.code,
+          `£${item.currentPrice.toFixed(2)}`,
+          `£${item.newPrice.toFixed(2)}`,
+          `${change > 0 ? "+" : ""}${changePercent}%`,
+          item.liveDate
+        ].join(",")
+      })
+    ]
+    
+    const csvContent = csvRows.join("\n")
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `albion-pricing-${new Date().toISOString().split("T")[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -192,11 +223,21 @@ export default function PublicPricingPage() {
 
         {/* Pricing Table */}
         <Card className="overflow-hidden border-0 shadow-lg">
-          <div className="p-6 border-b bg-[#2D3436] text-white">
-            <h2 className="text-xl font-semibold">Product Pricing Schedule</h2>
-            <p className="text-gray-300 text-sm mt-1">
-              {filteredData.length} products {searchQuery && `matching "${searchQuery}"`}
-            </p>
+          <div className="p-6 border-b bg-[#2D3436] text-white flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Product Pricing Schedule</h2>
+              <p className="text-gray-300 text-sm mt-1">
+                {filteredData.length} products {searchQuery && `matching "${searchQuery}"`}
+              </p>
+            </div>
+            <Button 
+              onClick={exportToCSV}
+              variant="outline" 
+              className="gap-2 bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <Table>
