@@ -307,6 +307,13 @@ export default function PricingCommunicationPage() {
   )
 
   // Page history data
+  type PublishedPageClient = {
+    id: string
+    name: string
+    email: string
+    url: string
+  }
+
   type PublishedPage = {
     id: string
     title: string
@@ -315,7 +322,10 @@ export default function PricingCommunicationPage() {
     productCount: number
     status: "active" | "expired" | "scheduled"
     url: string
+    clients: PublishedPageClient[]
   }
+
+  const [selectedPublishedPage, setSelectedPublishedPage] = useState<string | null>(null)
 
   const [publishedPages] = useState<PublishedPage[]>([
     {
@@ -326,6 +336,13 @@ export default function PricingCommunicationPage() {
       productCount: 29,
       status: "active",
       url: "/pricing",
+      clients: [
+        { id: "CUST001", name: "The Riverside Restaurant", email: "orders@riverside-restaurant.co.uk", url: "/pricing/CUST001" },
+        { id: "CUST002", name: "Hilltop Cafe", email: "purchasing@hilltopcafe.com", url: "/pricing/CUST002" },
+        { id: "CUST003", name: "Central Bistro", email: "manager@centralbistro.net", url: "/pricing/CUST003" },
+        { id: "CUST004", name: "Harbour Kitchen", email: "accounts@harbourkitchen.co.uk", url: "/pricing/CUST004" },
+        { id: "CUST005", name: "Oakwood Diner", email: "info@oakwooddiner.com", url: "/pricing/CUST005" },
+      ]
     },
     {
       id: "2", 
@@ -335,6 +352,12 @@ export default function PricingCommunicationPage() {
       productCount: 24,
       status: "expired",
       url: "/pricing/feb-2026",
+      clients: [
+        { id: "CUST001", name: "The Riverside Restaurant", email: "orders@riverside-restaurant.co.uk", url: "/pricing/CUST001" },
+        { id: "CUST002", name: "Hilltop Cafe", email: "purchasing@hilltopcafe.com", url: "/pricing/CUST002" },
+        { id: "CUST003", name: "Central Bistro", email: "manager@centralbistro.net", url: "/pricing/CUST003" },
+        { id: "CUST005", name: "Oakwood Diner", email: "info@oakwooddiner.com", url: "/pricing/CUST005" },
+      ]
     },
     {
       id: "3",
@@ -344,6 +367,11 @@ export default function PricingCommunicationPage() {
       productCount: 31,
       status: "expired",
       url: "/pricing/jan-2026",
+      clients: [
+        { id: "CUST001", name: "The Riverside Restaurant", email: "orders@riverside-restaurant.co.uk", url: "/pricing/CUST001" },
+        { id: "CUST003", name: "Central Bistro", email: "manager@centralbistro.net", url: "/pricing/CUST003" },
+        { id: "CUST005", name: "Oakwood Diner", email: "info@oakwooddiner.com", url: "/pricing/CUST005" },
+      ]
     },
   ])
 
@@ -1441,54 +1469,95 @@ export default function PricingCommunicationPage() {
                 {publishedPages.length > 0 ? (
                   <div className="space-y-4">
                     {publishedPages.map((page) => (
-                      <div 
-                        key={page.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-lg ${
-                            page.status === "active" 
-                              ? "bg-green-100" 
-                              : page.status === "scheduled"
-                              ? "bg-blue-100"
-                              : "bg-gray-100"
-                          }`}>
-                            <FileSpreadsheet className={`h-5 w-5 ${
-                              page.status === "active"
-                                ? "text-green-600"
+                      <div key={page.id} className="border rounded-lg overflow-hidden">
+                        <button 
+                          onClick={() => setSelectedPublishedPage(selectedPublishedPage === page.id ? null : page.id)}
+                          className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`p-2 rounded-lg ${
+                              page.status === "active" 
+                                ? "bg-green-100" 
                                 : page.status === "scheduled"
-                                ? "text-blue-600" 
-                                : "text-gray-500"
-                            }`} />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-foreground">{page.title}</h4>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
-                              <span>Published: {page.publishedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                              <span>|</span>
-                              <span>{page.productCount} products</span>
-                              <span>|</span>
-                              <span>Effective: {page.effectiveDate}</span>
+                                ? "bg-blue-100"
+                                : "bg-gray-100"
+                            }`}>
+                              <FileSpreadsheet className={`h-5 w-5 ${
+                                page.status === "active"
+                                  ? "text-green-600"
+                                  : page.status === "scheduled"
+                                  ? "text-blue-600" 
+                                  : "text-gray-500"
+                              }`} />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-foreground">{page.title}</h4>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground mt-0.5">
+                                <span>Published: {page.publishedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                <span>|</span>
+                                <span>{page.productCount} products</span>
+                                <span>|</span>
+                                <span>Effective: {page.effectiveDate}</span>
+                                <span>|</span>
+                                <span>{page.clients.length} clients</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-                            page.status === "active"
-                              ? "bg-green-100 text-green-700"
-                              : page.status === "scheduled"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-600"
-                          }`}>
-                            {page.status === "active" ? "Active" : page.status === "scheduled" ? "Scheduled" : "Expired"}
-                          </span>
-                          <Link href={page.url} target="_blank">
-                            <Button variant="outline" size="sm" className="gap-2">
-                              <ExternalLink className="h-4 w-4" />
-                              View
-                            </Button>
-                          </Link>
-                        </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+                              page.status === "active"
+                                ? "bg-green-100 text-green-700"
+                                : page.status === "scheduled"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}>
+                              {page.status === "active" ? "Active" : page.status === "scheduled" ? "Scheduled" : "Expired"}
+                            </span>
+                            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${
+                              selectedPublishedPage === page.id ? "rotate-180" : ""
+                            }`} />
+                          </div>
+                        </button>
+                        
+                        {/* Expanded Client List */}
+                        {selectedPublishedPage === page.id && (
+                          <div className="border-t bg-muted/20 p-4">
+                            <h5 className="font-medium text-sm text-foreground mb-3">Clients included in this update ({page.clients.length})</h5>
+                            <div className="border rounded-lg overflow-hidden bg-background">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold">Customer Number</TableHead>
+                                    <TableHead className="font-semibold">Client Name</TableHead>
+                                    <TableHead className="font-semibold">Email Address</TableHead>
+                                    <TableHead className="font-semibold text-right">Action</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {page.clients.map((client) => (
+                                    <TableRow key={client.id}>
+                                      <TableCell>
+                                        <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full font-medium">
+                                          {client.id}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="font-medium">{client.name}</TableCell>
+                                      <TableCell className="text-muted-foreground">{client.email}</TableCell>
+                                      <TableCell className="text-right">
+                                        <Link href={client.url} target="_blank">
+                                          <Button variant="outline" size="sm" className="gap-1 h-7 text-xs">
+                                            <ExternalLink className="h-3 w-3" />
+                                            View Prices
+                                          </Button>
+                                        </Link>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
