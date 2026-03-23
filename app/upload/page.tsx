@@ -229,14 +229,16 @@ export default function PricingCommunicationPage() {
   const [clientSearchQuery, setClientSearchQuery] = useState("")
   const [selectedClient, setSelectedClient] = useState<string | null>(null)
 
-  // Client data with email notification history
+  // Client data with email notification history (matching Published Pages structure)
   type ClientNotification = {
     id: string
-    date: Date
-    subject: string
-    priceType: "Fixed Price" | "List Prices"
+    title: string
+    publishedAt: Date
+    effectiveDate: string
     productCount: number
-    status: "Delivered" | "Opened" | "Clicked"
+    status: "active" | "expired" | "scheduled"
+    priceType: "Fixed Price" | "List Prices"
+    url: string
   }
 
   type ClientData = {
@@ -252,9 +254,9 @@ export default function PricingCommunicationPage() {
       name: "The Riverside Restaurant",
       email: "orders@riverside-restaurant.co.uk",
       notifications: [
-        { id: "n1", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "Fixed Price", productCount: 10, status: "Opened" },
-        { id: "n2", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "Fixed Price", productCount: 10, status: "Clicked" },
-        { id: "n3", date: new Date("2026-01-15"), subject: "January 2026 Price Update", priceType: "Fixed Price", productCount: 8, status: "Delivered" },
+        { id: "n1", title: "March 2026 Price Update", publishedAt: new Date("2026-03-01"), effectiveDate: "01.03.26", priceType: "Fixed Price", productCount: 10, status: "active", url: "/pricing/CUST001" },
+        { id: "n2", title: "February 2026 Price Update", publishedAt: new Date("2026-02-01"), effectiveDate: "01.02.26", priceType: "Fixed Price", productCount: 10, status: "expired", url: "/pricing/CUST001" },
+        { id: "n3", title: "January 2026 Price Update", publishedAt: new Date("2026-01-15"), effectiveDate: "15.01.26", priceType: "Fixed Price", productCount: 8, status: "expired", url: "/pricing/CUST001" },
       ]
     },
     {
@@ -262,8 +264,8 @@ export default function PricingCommunicationPage() {
       name: "Hilltop Cafe",
       email: "purchasing@hilltopcafe.com",
       notifications: [
-        { id: "n4", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "List Prices", productCount: 10, status: "Clicked" },
-        { id: "n5", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "List Prices", productCount: 10, status: "Opened" },
+        { id: "n4", title: "March 2026 Price Update", publishedAt: new Date("2026-03-01"), effectiveDate: "01.03.26", priceType: "List Prices", productCount: 10, status: "active", url: "/pricing/CUST002" },
+        { id: "n5", title: "February 2026 Price Update", publishedAt: new Date("2026-02-01"), effectiveDate: "01.02.26", priceType: "List Prices", productCount: 10, status: "expired", url: "/pricing/CUST002" },
       ]
     },
     {
@@ -271,9 +273,9 @@ export default function PricingCommunicationPage() {
       name: "Central Bistro",
       email: "manager@centralbistro.net",
       notifications: [
-        { id: "n6", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "Fixed Price", productCount: 9, status: "Delivered" },
-        { id: "n7", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "Fixed Price", productCount: 9, status: "Opened" },
-        { id: "n8", date: new Date("2026-01-15"), subject: "January 2026 Price Update", priceType: "Fixed Price", productCount: 7, status: "Clicked" },
+        { id: "n6", title: "March 2026 Price Update", publishedAt: new Date("2026-03-01"), effectiveDate: "01.03.26", priceType: "Fixed Price", productCount: 9, status: "active", url: "/pricing/CUST003" },
+        { id: "n7", title: "February 2026 Price Update", publishedAt: new Date("2026-02-01"), effectiveDate: "01.02.26", priceType: "Fixed Price", productCount: 9, status: "expired", url: "/pricing/CUST003" },
+        { id: "n8", title: "January 2026 Price Update", publishedAt: new Date("2026-01-15"), effectiveDate: "15.01.26", priceType: "Fixed Price", productCount: 7, status: "expired", url: "/pricing/CUST003" },
       ]
     },
     {
@@ -281,7 +283,7 @@ export default function PricingCommunicationPage() {
       name: "Harbour Kitchen",
       email: "accounts@harbourkitchen.co.uk",
       notifications: [
-        { id: "n9", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "List Prices", productCount: 15, status: "Opened" },
+        { id: "n9", title: "March 2026 Price Update", publishedAt: new Date("2026-03-01"), effectiveDate: "01.03.26", priceType: "List Prices", productCount: 15, status: "active", url: "/pricing/CUST004" },
       ]
     },
     {
@@ -289,10 +291,10 @@ export default function PricingCommunicationPage() {
       name: "Oakwood Diner",
       email: "info@oakwooddiner.com",
       notifications: [
-        { id: "n10", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "Fixed Price", productCount: 14, status: "Clicked" },
-        { id: "n11", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "Fixed Price", productCount: 14, status: "Clicked" },
-        { id: "n12", date: new Date("2026-01-15"), subject: "January 2026 Price Update", priceType: "Fixed Price", productCount: 12, status: "Opened" },
-        { id: "n13", date: new Date("2025-12-01"), subject: "December 2025 Price Update", priceType: "Fixed Price", productCount: 10, status: "Delivered" },
+        { id: "n10", title: "March 2026 Price Update", publishedAt: new Date("2026-03-01"), effectiveDate: "01.03.26", priceType: "Fixed Price", productCount: 14, status: "active", url: "/pricing/CUST005" },
+        { id: "n11", title: "February 2026 Price Update", publishedAt: new Date("2026-02-01"), effectiveDate: "01.02.26", priceType: "Fixed Price", productCount: 14, status: "expired", url: "/pricing/CUST005" },
+        { id: "n12", title: "January 2026 Price Update", publishedAt: new Date("2026-01-15"), effectiveDate: "15.01.26", priceType: "Fixed Price", productCount: 12, status: "expired", url: "/pricing/CUST005" },
+        { id: "n13", title: "December 2025 Price Update", publishedAt: new Date("2025-12-01"), effectiveDate: "01.12.25", priceType: "Fixed Price", productCount: 10, status: "expired", url: "/pricing/CUST005" },
       ]
     },
   ])
@@ -1588,14 +1590,15 @@ export default function PricingCommunicationPage() {
                           </div>
 
                           {/* Notification History */}
-                          <h4 className="font-medium text-foreground mb-3">Email Notification History</h4>
+                          <h4 className="font-medium text-foreground mb-3">Published Pages History</h4>
                           {client.notifications.length > 0 ? (
                             <div className="border rounded-lg overflow-auto">
                               <Table>
                                 <TableHeader>
                                   <TableRow className="bg-muted/50">
-                                    <TableHead className="font-semibold">Date</TableHead>
-                                    <TableHead className="font-semibold">Subject</TableHead>
+                                    <TableHead className="font-semibold">Title</TableHead>
+                                    <TableHead className="font-semibold">Published</TableHead>
+                                    <TableHead className="font-semibold">Effective Date</TableHead>
                                     <TableHead className="font-semibold">Price Type</TableHead>
                                     <TableHead className="font-semibold text-right">Products</TableHead>
                                     <TableHead className="font-semibold">Status</TableHead>
@@ -1605,14 +1608,15 @@ export default function PricingCommunicationPage() {
                                 <TableBody>
                                   {client.notifications.map((notification) => (
                                     <TableRow key={notification.id}>
+                                      <TableCell className="font-medium">{notification.title}</TableCell>
                                       <TableCell>
-                                        {notification.date.toLocaleDateString('en-GB', {
+                                        {notification.publishedAt.toLocaleDateString('en-GB', {
                                           day: '2-digit',
                                           month: 'short',
                                           year: 'numeric'
                                         })}
                                       </TableCell>
-                                      <TableCell className="font-medium">{notification.subject}</TableCell>
+                                      <TableCell>{notification.effectiveDate}</TableCell>
                                       <TableCell>
                                         <span className={`text-xs px-2 py-1 rounded-full ${
                                           notification.priceType === "Fixed Price" 
@@ -1625,17 +1629,17 @@ export default function PricingCommunicationPage() {
                                       <TableCell className="text-right">{notification.productCount}</TableCell>
                                       <TableCell>
                                         <span className={`text-xs px-2 py-1 rounded-full ${
-                                          notification.status === "Clicked" 
+                                          notification.status === "active" 
                                             ? "bg-green-100 text-green-700"
-                                            : notification.status === "Opened"
-                                            ? "bg-yellow-100 text-yellow-700"
+                                            : notification.status === "scheduled"
+                                            ? "bg-blue-100 text-blue-700"
                                             : "bg-gray-100 text-gray-600"
                                         }`}>
-                                          {notification.status}
+                                          {notification.status.charAt(0).toUpperCase() + notification.status.slice(1)}
                                         </span>
                                       </TableCell>
                                       <TableCell className="text-right">
-                                        <Link href={`/pricing/${client.id}`} target="_blank">
+                                        <Link href={notification.url} target="_blank">
                                           <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs">
                                             <ExternalLink className="h-3 w-3" />
                                             View
