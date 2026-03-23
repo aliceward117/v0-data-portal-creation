@@ -1,20 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, ChevronDown, Download, Building2, ArrowRight } from "lucide-react"
+import { useParams } from "next/navigation"
+import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-
-// Customer data for search
-const customers = [
-  { id: "CUST001", name: "The Riverside Restaurant" },
-  { id: "CUST002", name: "Hilltop Cafe" },
-  { id: "CUST003", name: "Central Bistro" },
-  { id: "CUST004", name: "Harbour Kitchen" },
-  { id: "CUST005", name: "Oakwood Diner" },
-]
 import {
   Table,
   TableBody,
@@ -23,6 +14,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+
+// Customer data with their specific product lists
+const customerData: Record<string, { name: string; products: string[] }> = {
+  "CUST001": {
+    name: "The Riverside Restaurant",
+    products: ["ANTIBAC", "APPLEF1", "AVOCADOFRRIPE", "BANANAFR", "BEETROOTJUICE", "BLUEBERRFR", "BREADMALTBLOOM", "BURRATAV100", "CELERYHEAD", "CAKEFRCHOC"]
+  },
+  "CUST002": {
+    name: "Hilltop Cafe",
+    products: ["ANTIBAC750", "APPLEJM", "BAKEWELL", "BATHROOMCLEANER", "BISCLOTUS", "BLUETOWEL", "BREADWHOLTHCF", "BUTTBEANSA10", "CAKEFDAPPLE", "CAPERSLILI"]
+  },
+  "CUST003": {
+    name: "Central Bistro",
+    products: ["BAGPAP8.5", "BEERLINECLEA5", "BLEACHTHICK5", "BLUEBERRFZ", "BREADWHTHCF", "BRUSHWIRE", "CAKEFDPECAN", "CAKEFRCARR", "CAWSAPPLE"]
+  },
+  "CUST004": {
+    name: "Harbour Kitchen",
+    products: ["ANTIBAC", "ANTIBAC750", "APPLEF1", "APPLEJM", "AVOCADOFRRIPE", "BAGPAP8.5", "BAKEWELL", "BANANAFR", "BATHROOMCLEANER", "BEERLINECLEA5", "BEETROOTJUICE", "BISCLOTUS", "BLEACHTHICK5", "BLUEBERRFR", "BLUEBERRFZ"]
+  },
+  "CUST005": {
+    name: "Oakwood Diner",
+    products: ["BLUETOWEL", "BREADMALTBLOOM", "BREADWHOLTHCF", "BREADWHTHCF", "BRUSHWIRE", "BURRATAV100", "BUTTBEANSA10", "CAKEFDAPPLE", "CAKEFDPECAN", "CAKEFRCARR", "CAKEFRCHOC", "CAPERSLILI", "CAWSAPPLE", "CELERYHEAD"]
+  },
+}
 
 // Fixed Price data - standard pricing for all customers
 const fixedPriceData = [
@@ -58,7 +73,7 @@ const fixedPriceData = [
 ]
 
 // List Prices data - tiered pricing based on volume bands (discounted rates)
-const bandAPriceData = [
+const listPriceData = [
   { id: "1", code: "ANTIBAC", currentPrice: 2.49, newPrice: 2.59, liveDate: "01.03.26" },
   { id: "2", code: "ANTIBAC750", currentPrice: 1.69, newPrice: 1.89, liveDate: "01.03.26" },
   { id: "3", code: "APPLEF1", currentPrice: 1.99, newPrice: 2.19, liveDate: "01.03.26" },
@@ -95,34 +110,31 @@ const navCategories = [
   "Drinks", "Frozen", "Non-Food", "REFINED", "What's New?", "About Us"
 ]
 
-export default function PublicPricingPage() {
-  const router = useRouter()
+export default function CustomerPricingPage() {
+  const params = useParams()
+  const customerId = params.customerId as string
   const [searchQuery, setSearchQuery] = useState("")
-  const [priceType, setPriceType] = useState<"fixed" | "bandA">("fixed")
-  const [customerSearch, setCustomerSearch] = useState("")
-  const [showCustomerResults, setShowCustomerResults] = useState(false)
+  const [priceType, setPriceType] = useState<"fixed" | "list">("fixed")
   
   const effectiveDate = "1st March 2026"
-  
-  // Filter customers based on search
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    customer.id.toLowerCase().includes(customerSearch.toLowerCase())
-  )
-  
-  // Navigate to customer-specific pricing page
-  const goToCustomerPricing = (customerId: string) => {
-    router.push(`/pricing/${customerId}`)
-  }
   const lastUpdated = new Date().toLocaleDateString('en-GB', { 
     day: 'numeric', 
     month: 'long', 
     year: 'numeric' 
   })
 
-  const pricingData = priceType === "fixed" ? fixedPriceData : bandAPriceData
+  // Get customer info
+  const customer = customerData[customerId]
+  const customerName = customer?.name || "Unknown Customer"
+  const customerProducts = customer?.products || []
+
+  // Filter pricing data based on customer's product list and price type
+  const basePricingData = priceType === "fixed" ? fixedPriceData : listPriceData
+  const customerPricingData = basePricingData.filter(item => 
+    customerProducts.includes(item.code)
+  )
   
-  const filteredData = pricingData.filter(item => 
+  const filteredData = customerPricingData.filter(item => 
     item.code.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -149,11 +161,28 @@ export default function PublicPricingPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = `albion-pricing-${new Date().toISOString().split("T")[0]}.csv`
+    link.download = `albion-pricing-${customerId}-${new Date().toISOString().split("T")[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  // Show error if customer not found
+  if (!customer) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Card className="p-8 max-w-md text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Customer Not Found</h2>
+          <p className="text-gray-600 mb-4">
+            The customer ID "{customerId}" was not found in our system.
+          </p>
+          <p className="text-sm text-gray-500">
+            Please check the URL and try again, or contact your account manager.
+          </p>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -227,14 +256,20 @@ export default function PublicPricingPage() {
         />
         <div className="relative z-20 max-w-7xl mx-auto px-6 py-20">
           <div className="max-w-2xl">
-            <h2 className="text-5xl font-bold mb-4 text-[#00B894]">
-              PRICING UPDATE
+            <p className="text-[#00B894] text-sm font-medium mb-2">
+              Customer: {customerId}
+            </p>
+            <h2 className="text-4xl font-bold mb-2 text-white">
+              {customerName}
             </h2>
-            <p className="text-2xl font-light mb-2">
+            <h3 className="text-3xl font-bold mb-4 text-[#00B894]">
+              PRICING UPDATE
+            </h3>
+            <p className="text-xl font-light mb-2">
               Effective from {effectiveDate}
             </p>
             <p className="text-gray-300 text-lg">
-              Please review our updated pricing schedule below
+              Your personalised pricing schedule
             </p>
           </div>
         </div>
@@ -258,8 +293,8 @@ export default function PublicPricingPage() {
               <TrendingUp className="h-6 w-6 text-[#00B894]" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Products</p>
-              <p className="text-xl font-semibold text-gray-900">{pricingData.length} items</p>
+              <p className="text-sm text-gray-500">Your Products</p>
+              <p className="text-xl font-semibold text-gray-900">{customerPricingData.length} items</p>
             </div>
           </Card>
           <Card className="p-6 flex items-start gap-4 border-0 shadow-md">
@@ -281,79 +316,6 @@ export default function PublicPricingPage() {
           </p>
         </div>
 
-        {/* Customer Search */}
-        <Card className="p-6 mb-8 border-0 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 className="h-5 w-5 text-[#00B894]" />
-            <h3 className="text-lg font-semibold text-gray-900">Find Your Customer Pricing</h3>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            Search for a client by name or customer number to view their specific pricing schedule.
-          </p>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by client name or customer number (e.g., CUST001)..."
-              value={customerSearch}
-              onChange={(e) => {
-                setCustomerSearch(e.target.value)
-                setShowCustomerResults(e.target.value.length > 0)
-              }}
-              onFocus={() => customerSearch.length > 0 && setShowCustomerResults(true)}
-              className="pl-10 h-12 text-base"
-            />
-            
-            {/* Search Results Dropdown */}
-            {showCustomerResults && customerSearch.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-10 max-h-64 overflow-auto">
-                {filteredCustomers.length > 0 ? (
-                  filteredCustomers.map((customer) => (
-                    <button
-                      key={customer.id}
-                      onClick={() => goToCustomerPricing(customer.id)}
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 border-b last:border-b-0 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-[#00B894]/10">
-                          <Building2 className="h-4 w-4 text-[#00B894]" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-medium text-gray-900">{customer.name}</p>
-                          <p className="text-sm text-gray-500">{customer.id}</p>
-                        </div>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-gray-400" />
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-6 text-center text-gray-500">
-                    <p>No customers found matching "{customerSearch}"</p>
-                    <p className="text-sm mt-1">Try searching by name or customer number</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          
-          {/* Quick Links */}
-          <div className="mt-4 pt-4 border-t">
-            <p className="text-sm text-gray-500 mb-2">Quick access:</p>
-            <div className="flex flex-wrap gap-2">
-              {customers.slice(0, 3).map((customer) => (
-                <Button
-                  key={customer.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => goToCustomerPricing(customer.id)}
-                  className="text-xs"
-                >
-                  {customer.name}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </Card>
-
         {/* Pricing Table */}
         <Card className="overflow-hidden border-0 shadow-lg">
           {/* Price Type Toggle */}
@@ -371,9 +333,9 @@ export default function PublicPricingPage() {
                 Fixed Price
               </button>
               <button
-                onClick={() => setPriceType("bandA")}
+                onClick={() => setPriceType("list")}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  priceType === "bandA"
+                  priceType === "list"
                     ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-600 hover:text-gray-900"
                 }`}
@@ -449,11 +411,9 @@ export default function PublicPricingPage() {
         </Card>
 
         {/* Footer */}
-        <div className="mt-12 pt-8 border-t">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <p>This pricing schedule is confidential and intended only for the recipient.</p>
-            <p>© {new Date().getFullYear()} Albion Fine Foods. All rights reserved.</p>
-          </div>
+        <div className="mt-12 text-center text-sm text-gray-500">
+          <p>Questions about your pricing? Contact your account manager or call 01onal 123456</p>
+          <p className="mt-2">Customer Reference: {customerId}</p>
         </div>
       </main>
     </div>
