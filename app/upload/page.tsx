@@ -1564,29 +1564,12 @@ export default function PricingCommunicationPage() {
                       return (
                         <>
                           {/* Client Header */}
-                          <div className="flex items-center justify-between mb-4 p-4 bg-muted/30 rounded-lg">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-foreground">{client.name}</h4>
-                                <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full">{client.id}</span>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-0.5">{client.email}</p>
-                            </div>
+                          <div className="mb-4 p-4 bg-muted/30 rounded-lg">
                             <div className="flex items-center gap-2">
-                              <Link href={`/pricing/${client.id}`} target="_blank">
-                                <Button variant="outline" size="sm" className="gap-2">
-                                  <ExternalLink className="h-4 w-4" />
-                                  View Pricing Page
-                                </Button>
-                              </Link>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => { setSelectedClient(null); setClientSearchQuery(""); }}
-                              >
-                                Clear
-                              </Button>
+                              <h4 className="font-semibold text-foreground">{client.name}</h4>
+                              <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full">{client.id}</span>
                             </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">{client.email}</p>
                           </div>
 
                           {/* Notification History */}
