@@ -1,10 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, ChevronDown, Download } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { FileSpreadsheet, Calendar, TrendingUp, Search, User, Heart, ShoppingCart, ChevronDown, Download, Building2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+
+// Customer data for search
+const customers = [
+  { id: "CUST001", name: "The Riverside Restaurant" },
+  { id: "CUST002", name: "Hilltop Cafe" },
+  { id: "CUST003", name: "Central Bistro" },
+  { id: "CUST004", name: "Harbour Kitchen" },
+  { id: "CUST005", name: "Oakwood Diner" },
+]
 import {
   Table,
   TableBody,
@@ -86,10 +96,24 @@ const navCategories = [
 ]
 
 export default function PublicPricingPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [priceType, setPriceType] = useState<"fixed" | "bandA">("fixed")
+  const [customerSearch, setCustomerSearch] = useState("")
+  const [showCustomerResults, setShowCustomerResults] = useState(false)
   
   const effectiveDate = "1st March 2026"
+  
+  // Filter customers based on search
+  const filteredCustomers = customers.filter(customer => 
+    customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+    customer.id.toLowerCase().includes(customerSearch.toLowerCase())
+  )
+  
+  // Navigate to customer-specific pricing page
+  const goToCustomerPricing = (customerId: string) => {
+    router.push(`/pricing/${customerId}`)
+  }
   const lastUpdated = new Date().toLocaleDateString('en-GB', { 
     day: 'numeric', 
     month: 'long', 
@@ -256,6 +280,79 @@ export default function PublicPricingPage() {
             Please update your records accordingly. For any queries regarding these price changes, please contact your dedicated account manager.
           </p>
         </div>
+
+        {/* Customer Search */}
+        <Card className="p-6 mb-8 border-0 shadow-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <Building2 className="h-5 w-5 text-[#00B894]" />
+            <h3 className="text-lg font-semibold text-gray-900">Find Your Customer Pricing</h3>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Search for a client by name or customer number to view their specific pricing schedule.
+          </p>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search by client name or customer number (e.g., CUST001)..."
+              value={customerSearch}
+              onChange={(e) => {
+                setCustomerSearch(e.target.value)
+                setShowCustomerResults(e.target.value.length > 0)
+              }}
+              onFocus={() => customerSearch.length > 0 && setShowCustomerResults(true)}
+              className="pl-10 h-12 text-base"
+            />
+            
+            {/* Search Results Dropdown */}
+            {showCustomerResults && customerSearch.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-10 max-h-64 overflow-auto">
+                {filteredCustomers.length > 0 ? (
+                  filteredCustomers.map((customer) => (
+                    <button
+                      key={customer.id}
+                      onClick={() => goToCustomerPricing(customer.id)}
+                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 border-b last:border-b-0 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-[#00B894]/10">
+                          <Building2 className="h-4 w-4 text-[#00B894]" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium text-gray-900">{customer.name}</p>
+                          <p className="text-sm text-gray-500">{customer.id}</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center text-gray-500">
+                    <p>No customers found matching "{customerSearch}"</p>
+                    <p className="text-sm mt-1">Try searching by name or customer number</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Quick Links */}
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm text-gray-500 mb-2">Quick access:</p>
+            <div className="flex flex-wrap gap-2">
+              {customers.slice(0, 3).map((customer) => (
+                <Button
+                  key={customer.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToCustomerPricing(customer.id)}
+                  className="text-xs"
+                >
+                  {customer.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </Card>
 
         {/* Pricing Table */}
         <Card className="overflow-hidden border-0 shadow-lg">

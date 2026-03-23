@@ -223,7 +223,86 @@ export default function PricingCommunicationPage() {
   const [previewExpanded, setPreviewExpanded] = useState(true)
   const [isSendingCampaign, setIsSendingCampaign] = useState(false)
   const [campaignSent, setCampaignSent] = useState(false)
-  const [externalSubSection, setExternalSubSection] = useState<"preview" | "history">("preview")
+  const [externalSubSection, setExternalSubSection] = useState<"pages" | "clients">("pages")
+  
+  // Client search state
+  const [clientSearchQuery, setClientSearchQuery] = useState("")
+  const [selectedClient, setSelectedClient] = useState<string | null>(null)
+
+  // Client data with email notification history
+  type ClientNotification = {
+    id: string
+    date: Date
+    subject: string
+    priceType: "Fixed Price" | "List Prices"
+    productCount: number
+    status: "Delivered" | "Opened" | "Clicked"
+  }
+
+  type ClientData = {
+    id: string
+    name: string
+    email: string
+    notifications: ClientNotification[]
+  }
+
+  const [clientDatabase] = useState<ClientData[]>([
+    {
+      id: "CUST001",
+      name: "The Riverside Restaurant",
+      email: "orders@riverside-restaurant.co.uk",
+      notifications: [
+        { id: "n1", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "Fixed Price", productCount: 10, status: "Opened" },
+        { id: "n2", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "Fixed Price", productCount: 10, status: "Clicked" },
+        { id: "n3", date: new Date("2026-01-15"), subject: "January 2026 Price Update", priceType: "Fixed Price", productCount: 8, status: "Delivered" },
+      ]
+    },
+    {
+      id: "CUST002",
+      name: "Hilltop Cafe",
+      email: "purchasing@hilltopcafe.com",
+      notifications: [
+        { id: "n4", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "List Prices", productCount: 10, status: "Clicked" },
+        { id: "n5", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "List Prices", productCount: 10, status: "Opened" },
+      ]
+    },
+    {
+      id: "CUST003",
+      name: "Central Bistro",
+      email: "manager@centralbistro.net",
+      notifications: [
+        { id: "n6", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "Fixed Price", productCount: 9, status: "Delivered" },
+        { id: "n7", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "Fixed Price", productCount: 9, status: "Opened" },
+        { id: "n8", date: new Date("2026-01-15"), subject: "January 2026 Price Update", priceType: "Fixed Price", productCount: 7, status: "Clicked" },
+      ]
+    },
+    {
+      id: "CUST004",
+      name: "Harbour Kitchen",
+      email: "accounts@harbourkitchen.co.uk",
+      notifications: [
+        { id: "n9", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "List Prices", productCount: 15, status: "Opened" },
+      ]
+    },
+    {
+      id: "CUST005",
+      name: "Oakwood Diner",
+      email: "info@oakwooddiner.com",
+      notifications: [
+        { id: "n10", date: new Date("2026-03-01"), subject: "March 2026 Price Update", priceType: "Fixed Price", productCount: 14, status: "Clicked" },
+        { id: "n11", date: new Date("2026-02-01"), subject: "February 2026 Price Update", priceType: "Fixed Price", productCount: 14, status: "Clicked" },
+        { id: "n12", date: new Date("2026-01-15"), subject: "January 2026 Price Update", priceType: "Fixed Price", productCount: 12, status: "Opened" },
+        { id: "n13", date: new Date("2025-12-01"), subject: "December 2025 Price Update", priceType: "Fixed Price", productCount: 10, status: "Delivered" },
+      ]
+    },
+  ])
+
+  // Filter clients based on search query
+  const filteredClients = clientDatabase.filter(client =>
+    client.name.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+    client.id.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+    client.email.toLowerCase().includes(clientSearchQuery.toLowerCase())
+  )
 
   // Page history data
   type PublishedPage = {
@@ -1324,7 +1403,31 @@ export default function PricingCommunicationPage() {
                 </p>
               </div>
 
-              {/* Page History */}
+              {/* Sub-navigation tabs */}
+              <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6 w-fit">
+                <button
+                  onClick={() => { setExternalSubSection("pages"); setSelectedClient(null); }}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    externalSubSection === "pages"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Published Pages
+                </button>
+                <button
+                  onClick={() => setExternalSubSection("clients")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    externalSubSection === "clients"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Client Lookup
+                </button>
+              </div>
+
+              {externalSubSection === "pages" && (
               <Card className="p-6">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold text-foreground">Published Pages</h3>
@@ -1397,6 +1500,177 @@ export default function PricingCommunicationPage() {
                   </div>
                 )}
               </Card>
+              )}
+
+              {externalSubSection === "clients" && (
+              <Card className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Client Lookup</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Search for a client by name or customer number to view their email notification history
+                  </p>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative mb-6">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by client name, customer number, or email..."
+                    value={clientSearchQuery}
+                    onChange={(e) => { setClientSearchQuery(e.target.value); setSelectedClient(null); }}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Client Results */}
+                {clientSearchQuery && !selectedClient && (
+                  <div className="border rounded-lg divide-y mb-6">
+                    {filteredClients.length > 0 ? (
+                      filteredClients.map((client) => (
+                        <button
+                          key={client.id}
+                          onClick={() => setSelectedClient(client.id)}
+                          className="w-full p-4 text-left hover:bg-muted/50 transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-foreground">{client.name}</span>
+                              <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">{client.id}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5">{client.email}</p>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {client.notifications.length} notification{client.notifications.length !== 1 ? "s" : ""}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground">
+                        No clients found matching "{clientSearchQuery}"
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Selected Client Details */}
+                {selectedClient && (
+                  <div>
+                    {(() => {
+                      const client = clientDatabase.find(c => c.id === selectedClient)
+                      if (!client) return null
+                      return (
+                        <>
+                          {/* Client Header */}
+                          <div className="flex items-center justify-between mb-4 p-4 bg-muted/30 rounded-lg">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-foreground">{client.name}</h4>
+                                <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full">{client.id}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-0.5">{client.email}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Link href={`/pricing/${client.id}`} target="_blank">
+                                <Button variant="outline" size="sm" className="gap-2">
+                                  <ExternalLink className="h-4 w-4" />
+                                  View Pricing Page
+                                </Button>
+                              </Link>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => { setSelectedClient(null); setClientSearchQuery(""); }}
+                              >
+                                Clear
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Notification History */}
+                          <h4 className="font-medium text-foreground mb-3">Email Notification History</h4>
+                          {client.notifications.length > 0 ? (
+                            <div className="border rounded-lg overflow-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold">Date</TableHead>
+                                    <TableHead className="font-semibold">Subject</TableHead>
+                                    <TableHead className="font-semibold">Price Type</TableHead>
+                                    <TableHead className="font-semibold text-right">Products</TableHead>
+                                    <TableHead className="font-semibold">Status</TableHead>
+                                    <TableHead className="font-semibold text-right">Action</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {client.notifications.map((notification) => (
+                                    <TableRow key={notification.id}>
+                                      <TableCell>
+                                        {notification.date.toLocaleDateString('en-GB', {
+                                          day: '2-digit',
+                                          month: 'short',
+                                          year: 'numeric'
+                                        })}
+                                      </TableCell>
+                                      <TableCell className="font-medium">{notification.subject}</TableCell>
+                                      <TableCell>
+                                        <span className={`text-xs px-2 py-1 rounded-full ${
+                                          notification.priceType === "Fixed Price" 
+                                            ? "bg-blue-100 text-blue-700" 
+                                            : "bg-purple-100 text-purple-700"
+                                        }`}>
+                                          {notification.priceType}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="text-right">{notification.productCount}</TableCell>
+                                      <TableCell>
+                                        <span className={`text-xs px-2 py-1 rounded-full ${
+                                          notification.status === "Clicked" 
+                                            ? "bg-green-100 text-green-700"
+                                            : notification.status === "Opened"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-gray-100 text-gray-600"
+                                        }`}>
+                                          {notification.status}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <Link href={`/pricing/${client.id}`} target="_blank">
+                                          <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs">
+                                            <ExternalLink className="h-3 w-3" />
+                                            View
+                                          </Button>
+                                        </Link>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 border rounded-lg">
+                              <Mail className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                              <p className="text-muted-foreground">No notifications sent to this client yet</p>
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!clientSearchQuery && !selectedClient && (
+                  <div className="text-center py-12 border rounded-lg border-dashed">
+                    <Search className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">Enter a client name or customer number to search</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      e.g. "Riverside", "CUST001", or "orders@..."
+                    </p>
+                  </div>
+                )}
+              </Card>
+              )}
             </div>
           )}
         </main>
