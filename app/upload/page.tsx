@@ -226,13 +226,6 @@ export default function PricingCommunicationPage() {
   const [externalSubSection, setExternalSubSection] = useState<"pages" | "clients">("pages")
   
   // Campaign Content Builder State
-  const [showContentBuilder, setShowContentBuilder] = useState(false)
-  const [contentBuilderMode, setContentBuilderMode] = useState<"edit" | "preview">("edit")
-  const [selectedAudience, setSelectedAudience] = useState<string | null>(null)
-  const [testEmailAddress, setTestEmailAddress] = useState("")
-  const [isSendingTest, setIsSendingTest] = useState(false)
-  const [testSent, setTestSent] = useState(false)
-  
   // Content block types
   type ContentBlock = {
     id: string
@@ -245,6 +238,15 @@ export default function PricingCommunicationPage() {
       buttonText?: string
     }
   }
+
+  const [showContentBuilder, setShowContentBuilder] = useState(false)
+  const [selectedAudience, setSelectedAudience] = useState<string | null>(null)
+  const [testEmailAddress, setTestEmailAddress] = useState("")
+  const [isSendingTest, setIsSendingTest] = useState(false)
+  const [testSent, setTestSent] = useState(false)
+  const [contentSaved, setContentSaved] = useState(false)
+  const [isSavingContent, setIsSavingContent] = useState(false)
+  const [savedEmailContent, setSavedEmailContent] = useState<ContentBlock[] | null>(null)
   
   const [emailContentBlocks, setEmailContentBlocks] = useState<ContentBlock[]>([
     { id: "1", type: "heading", content: "Your Updated Pricing is Ready", settings: { alignment: "center", fontSize: "large" } },
@@ -335,6 +337,17 @@ export default function PricingCommunicationPage() {
       setTestSent(true)
       setTimeout(() => setTestSent(false), 3000)
     }, 1500)
+  }
+
+  // Save campaign content
+  const handleSaveContent = () => {
+    setIsSavingContent(true)
+    setTimeout(() => {
+      setSavedEmailContent([...emailContentBlocks])
+      setIsSavingContent(false)
+      setContentSaved(true)
+      setTimeout(() => setContentSaved(false), 3000)
+    }, 1000)
   }
   
   // Client search state
@@ -1306,31 +1319,31 @@ export default function PricingCommunicationPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Mode Toggle */}
-                      <div className="flex gap-1 p-1 bg-muted rounded-lg">
-                        <button
-                          onClick={() => setContentBuilderMode("edit")}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                            contentBuilderMode === "edit"
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
+                      {/* Save Button */}
+                      {contentSaved ? (
+                        <Button className="gap-2 bg-green-600 hover:bg-green-600" disabled>
+                          <CheckCircle className="h-4 w-4" />
+                          Saved
+                        </Button>
+                      ) : (
+                        <Button 
+                          className="gap-2"
+                          onClick={handleSaveContent}
+                          disabled={isSavingContent}
                         >
-                          <Type className="h-4 w-4" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setContentBuilderMode("preview")}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                            contentBuilderMode === "preview"
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          <Eye className="h-4 w-4" />
-                          Preview
-                        </button>
-                      </div>
+                          {isSavingContent ? (
+                            <>
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              Save Content
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -1346,7 +1359,6 @@ export default function PricingCommunicationPage() {
                   )}
 
                   <div className="p-4">
-                    {contentBuilderMode === "edit" ? (
                       <div className="grid grid-cols-12 gap-4">
                         {/* Available Blocks Sidebar */}
                         <div className="col-span-3">
@@ -1620,121 +1632,7 @@ export default function PricingCommunicationPage() {
                           </div>
                         </div>
                       </div>
-                    ) : (
-                      /* Preview Mode */
-                      <div className="max-w-2xl mx-auto">
-                        <div className="border rounded-lg shadow-lg overflow-hidden">
-                          {/* Email Client Header */}
-                          <div className="bg-gray-100 px-4 py-3 border-b flex items-center gap-2">
-                            <div className="flex gap-1.5">
-                              <div className="w-3 h-3 rounded-full bg-red-400" />
-                              <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                              <div className="w-3 h-3 rounded-full bg-green-400" />
-                            </div>
-                            <span className="text-sm text-gray-600 ml-2">Email Preview</span>
-                          </div>
-                          
-                          {/* Email Header */}
-                          <div className="p-4 border-b bg-white">
-                            <div className="space-y-1 text-sm">
-                              <div className="flex">
-                                <span className="text-muted-foreground w-20">From:</span>
-                                <span className="font-medium">Albion Pricing Team &lt;pricing@albion.co.uk&gt;</span>
-                              </div>
-                              <div className="flex">
-                                <span className="text-muted-foreground w-20">To:</span>
-                                <span>The Riverside Restaurant &lt;orders@riverside-restaurant.co.uk&gt;</span>
-                              </div>
-                              <div className="flex">
-                                <span className="text-muted-foreground w-20">Subject:</span>
-                                <span className="font-medium">{selectedCampaign.subject}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Email Body */}
-                          <div className="p-6 bg-white">
-                            {emailContentBlocks.map((block) => (
-                              <div key={block.id} className="mb-4">
-                                {block.type === "heading" && (
-                                  <h1 className={`text-2xl font-bold text-gray-900 ${
-                                    block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
-                                  }`}>
-                                    {block.content}
-                                  </h1>
-                                )}
-                                {block.type === "text" && (
-                                  <p className={`text-gray-600 whitespace-pre-wrap ${
-                                    block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
-                                  }`}>
-                                    {block.content.replace("{{customer_name}}", "The Riverside Restaurant")}
-                                  </p>
-                                )}
-                                {block.type === "pricing-url" && (
-                                  <div className="text-center py-4">
-                                    <a 
-                                      href="/pricing/CUST001" 
-                                      className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-white font-medium"
-                                      style={{ backgroundColor: block.settings?.buttonColor || "#00B894" }}
-                                    >
-                                      {block.settings?.buttonText || "View Your Pricing"}
-                                    </a>
-                                  </div>
-                                )}
-                                {block.type === "customer-name" && (
-                                  <span className="font-medium">The Riverside Restaurant</span>
-                                )}
-                                {block.type === "divider" && (
-                                  <hr className="border-t border-gray-200 my-4" />
-                                )}
-                                {block.type === "pricing-table" && ingestedData.length > 0 && (
-                                  <div className="border rounded overflow-hidden my-4">
-                                    <table className="w-full text-sm">
-                                      <thead className="bg-gray-50">
-                                        <tr>
-                                          <th className="px-4 py-2 text-left font-medium text-gray-600">Product</th>
-                                          <th className="px-4 py-2 text-right font-medium text-gray-600">Current Price</th>
-                                          <th className="px-4 py-2 text-right font-medium text-gray-600">New Price</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {ingestedData.slice(0, 5).map((item, idx) => (
-                                          <tr key={idx} className="border-t">
-                                            <td className="px-4 py-2">{item.code}</td>
-                                            <td className="px-4 py-2 text-right">£{item.currentPrice.toFixed(2)}</td>
-                                            <td className="px-4 py-2 text-right font-medium" style={{ color: "#00B894" }}>£{item.newPrice.toFixed(2)}</td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Email Footer */}
-                          <div className="px-6 py-4 bg-gray-50 border-t text-center text-xs text-gray-500">
-                            <p>© 2026 Albion. All rights reserved.</p>
-                            <p className="mt-1">
-                              <a href="#" className="text-accent hover:underline">Unsubscribe</a> | 
-                              <a href="#" className="text-accent hover:underline ml-2">Privacy Policy</a>
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Preview Info */}
-                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <Eye className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="font-medium text-blue-800 text-sm">Live Preview</p>
-                              <p className="text-xs text-blue-600">This preview shows how the email will appear to &quot;The Riverside Restaurant&quot; (CUST001). Dynamic tokens are replaced with sample customer data.</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                  </div>
                   </div>
                 </Card>
               )}
@@ -1835,55 +1733,133 @@ export default function PricingCommunicationPage() {
                           </div>
                         </div>
 
-                        <h2 className="text-xl font-semibold text-foreground mb-4">Updated Pricing Schedule</h2>
-                        
-                        <p className="text-muted-foreground mb-4">
-                          Dear Valued Customer,
-                        </p>
-                        
-                        <p className="text-muted-foreground mb-4">
-                          {selectedCampaign.previewText}. Below you will find a summary of the updated prices for your reference.
-                        </p>
+                        {/* Render saved content blocks or default content */}
+                        {savedEmailContent ? (
+                          <>
+                            {savedEmailContent.map((block) => (
+                              <div key={block.id} className="mb-4">
+                                {block.type === "heading" && (
+                                  <h2 className={`text-xl font-semibold text-foreground ${
+                                    block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
+                                  }`}>
+                                    {block.content}
+                                  </h2>
+                                )}
+                                {block.type === "text" && (
+                                  <p className={`text-muted-foreground whitespace-pre-wrap ${
+                                    block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
+                                  }`}>
+                                    {block.content.replace("{{customer_name}}", "Valued Customer")}
+                                  </p>
+                                )}
+                                {block.type === "pricing-url" && (
+                                  <div className="text-center py-4">
+                                    <div 
+                                      className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-white font-medium"
+                                      style={{ backgroundColor: block.settings?.buttonColor || "#00B894" }}
+                                    >
+                                      {block.settings?.buttonText || "View Your Pricing"}
+                                    </div>
+                                    <p className="text-xs text-accent mt-2">Dynamic link to customer pricing page</p>
+                                  </div>
+                                )}
+                                {block.type === "customer-name" && (
+                                  <span className="font-medium text-foreground">{"{{customer_name}}"}</span>
+                                )}
+                                {block.type === "divider" && (
+                                  <hr className="border-t border-muted my-4" />
+                                )}
+                                {block.type === "pricing-table" && ingestedData.length > 0 && (
+                                  <div className="my-4 border rounded overflow-hidden">
+                                    <table className="w-full text-sm">
+                                      <thead>
+                                        <tr className="bg-muted/50">
+                                          <th className="text-left p-2 font-medium">Product</th>
+                                          <th className="text-right p-2 font-medium">Current</th>
+                                          <th className="text-right p-2 font-medium">New</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {ingestedData.slice(0, 5).map((item) => (
+                                          <tr key={item.id} className="border-t">
+                                            <td className="p-2 font-mono text-xs">{item.code}</td>
+                                            <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                            <td className="p-2 text-right font-medium text-accent">£{item.newPrice.toFixed(2)}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                    {ingestedData.length > 5 && (
+                                      <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
+                                        + {ingestedData.length - 5} more items
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {block.type === "button" && (
+                                  <div className="text-center py-2">
+                                    <div className="inline-block px-6 py-2 bg-accent text-white rounded-lg font-medium">
+                                      {block.content}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <>
+                            {/* Default preview content when no saved content */}
+                            <h2 className="text-xl font-semibold text-foreground mb-4">Updated Pricing Schedule</h2>
+                            
+                            <p className="text-muted-foreground mb-4">
+                              Dear Valued Customer,
+                            </p>
+                            
+                            <p className="text-muted-foreground mb-4">
+                              {selectedCampaign.previewText}. Below you will find a summary of the updated prices for your reference.
+                            </p>
 
-                        {/* Sample pricing table in email */}
-                        {ingestedData.length > 0 && (
-                          <div className="my-6 border rounded overflow-hidden">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-muted/50">
-                                  <th className="text-left p-2 font-medium">Product</th>
-                                  <th className="text-right p-2 font-medium">Current</th>
-                                  <th className="text-right p-2 font-medium">New</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {ingestedData.slice(0, 5).map((item) => (
-                                  <tr key={item.id} className="border-t">
-                                    <td className="p-2 font-mono text-xs">{item.code}</td>
-                                    <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
-                                    <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                            {ingestedData.length > 5 && (
-                              <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
-                                + {ingestedData.length - 5} more items
+                            {/* Sample pricing table in email */}
+                            {ingestedData.length > 0 && (
+                              <div className="my-6 border rounded overflow-hidden">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="bg-muted/50">
+                                      <th className="text-left p-2 font-medium">Product</th>
+                                      <th className="text-right p-2 font-medium">Current</th>
+                                      <th className="text-right p-2 font-medium">New</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {ingestedData.slice(0, 5).map((item) => (
+                                      <tr key={item.id} className="border-t">
+                                        <td className="p-2 font-mono text-xs">{item.code}</td>
+                                        <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                        <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                                {ingestedData.length > 5 && (
+                                  <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
+                                    + {ingestedData.length - 5} more items
+                                  </div>
+                                )}
                               </div>
                             )}
-                          </div>
+
+                            <p className="text-muted-foreground mb-4">
+                              These prices will be effective from <strong>{ingestedData[0]?.liveDate || "the scheduled date"}</strong>. Please contact us if you have any questions.
+                            </p>
+
+                            <p className="text-muted-foreground mb-2">
+                              Best regards,
+                            </p>
+                            <p className="text-muted-foreground font-medium">
+                              The Albion Pricing Team
+                            </p>
+                          </>
                         )}
-
-                        <p className="text-muted-foreground mb-4">
-                          These prices will be effective from <strong>{ingestedData[0]?.liveDate || "the scheduled date"}</strong>. Please contact us if you have any questions.
-                        </p>
-
-                        <p className="text-muted-foreground mb-2">
-                          Best regards,
-                        </p>
-                        <p className="text-muted-foreground font-medium">
-                          The Albion Pricing Team
-                        </p>
 
                         {/* Footer */}
                         <div className="mt-8 pt-4 border-t text-center text-xs text-muted-foreground">
