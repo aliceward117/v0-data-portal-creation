@@ -1633,7 +1633,6 @@ export default function PricingCommunicationPage() {
                         </div>
                       </div>
                   </div>
-                  </div>
                 </Card>
               )}
 
