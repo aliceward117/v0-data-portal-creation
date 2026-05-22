@@ -1,6 +1,6 @@
 "use client"
 
-import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink, Download, Clock, ChevronDown, Search } from "lucide-react"
+import { Upload, FileSpreadsheet, X, CheckCircle, AlertCircle, Mail, Send, FileUp, MessageSquare, ExternalLink, Download, Clock, ChevronDown, Search, GripVertical, Type, Image, Link2, Users, Eye, TestTube, AlertTriangle, Plus, Trash2, Copy } from "lucide-react"
 import Link from "next/link"
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
@@ -224,6 +224,131 @@ export default function PricingCommunicationPage() {
   const [isSendingCampaign, setIsSendingCampaign] = useState(false)
   const [campaignSent, setCampaignSent] = useState(false)
   const [externalSubSection, setExternalSubSection] = useState<"pages" | "clients">("pages")
+  
+  // Campaign Content Builder State
+  // Content block types
+  type ContentBlock = {
+    id: string
+    type: "text" | "heading" | "image" | "button" | "divider" | "pricing-url" | "customer-name" | "pricing-table"
+    content: string
+    settings?: {
+      alignment?: "left" | "center" | "right"
+      fontSize?: "small" | "medium" | "large"
+      buttonColor?: string
+      buttonText?: string
+    }
+  }
+
+  const [showContentBuilder, setShowContentBuilder] = useState(false)
+  const [selectedAudience, setSelectedAudience] = useState<string | null>(null)
+  const [testEmailAddress, setTestEmailAddress] = useState("")
+  const [isSendingTest, setIsSendingTest] = useState(false)
+  const [testSent, setTestSent] = useState(false)
+  const [contentSaved, setContentSaved] = useState(false)
+  const [isSavingContent, setIsSavingContent] = useState(false)
+  const [savedEmailContent, setSavedEmailContent] = useState<ContentBlock[] | null>(null)
+  
+  const [emailContentBlocks, setEmailContentBlocks] = useState<ContentBlock[]>([
+    { id: "1", type: "heading", content: "Your Updated Pricing is Ready", settings: { alignment: "center", fontSize: "large" } },
+    { id: "2", type: "text", content: "Dear {{customer_name}},", settings: { alignment: "left" } },
+    { id: "3", type: "text", content: "We are pleased to share your updated pricing schedule. Please review the changes below and click the button to view your personalized pricing page.", settings: { alignment: "left" } },
+    { id: "4", type: "pricing-url", content: "{{pricing_url}}", settings: { buttonColor: "#00B894", buttonText: "View Your Pricing" } },
+    { id: "5", type: "pricing-table", content: "Sample pricing items from your upload", settings: {} },
+    { id: "6", type: "text", content: "If you have any questions about these prices, please contact your account manager.", settings: { alignment: "left" } },
+    { id: "7", type: "divider", content: "", settings: {} },
+    { id: "8", type: "text", content: "Best regards,\nThe Albion Pricing Team", settings: { alignment: "left" } },
+  ])
+  
+  // Available content blocks for drag and drop
+  const availableBlocks = [
+    { type: "heading", label: "Heading", icon: Type, description: "Add a title or heading" },
+    { type: "text", label: "Text Block", icon: Type, description: "Add paragraph text" },
+    { type: "image", label: "Image", icon: Image, description: "Add an image" },
+    { type: "button", label: "Button", icon: Link2, description: "Add a call-to-action button" },
+    { type: "divider", label: "Divider", icon: GripVertical, description: "Add a horizontal line" },
+    { type: "pricing-url", label: "Customer Pricing URL", icon: Link2, description: "Dynamic link to customer pricing page" },
+    { type: "customer-name", label: "Customer Name", icon: Users, description: "Insert customer name dynamically" },
+    { type: "pricing-table", label: "Pricing Table", icon: FileSpreadsheet, description: "Show sample pricing items" },
+  ]
+  
+  // Audience segments
+  const audienceSegments = [
+    { id: "all", name: "All Customers", count: 156, description: "Send to entire customer list" },
+    { id: "fixed-price", name: "Fixed Price Customers", count: 89, description: "Customers on fixed pricing tier" },
+    { id: "list-price", name: "List Price Customers", count: 67, description: "Customers on list pricing tier" },
+    { id: "recent", name: "Recent Orders (30 days)", count: 42, description: "Customers with orders in last 30 days" },
+    { id: "inactive", name: "Inactive Customers", count: 28, description: "No orders in 90+ days" },
+  ]
+  
+  // Check if pricing URL token exists in content
+  const hasPricingUrlToken = emailContentBlocks.some(block => block.type === "pricing-url")
+  const hasCustomerNameToken = emailContentBlocks.some(block => block.type === "customer-name" || block.content.includes("{{customer_name}}"))
+  
+  // Add content block
+  const addContentBlock = (type: ContentBlock["type"]) => {
+    const newBlock: ContentBlock = {
+      id: crypto.randomUUID(),
+      type,
+      content: type === "heading" ? "New Heading" 
+        : type === "text" ? "Enter your text here..."
+        : type === "pricing-url" ? "{{pricing_url}}"
+        : type === "customer-name" ? "{{customer_name}}"
+        : type === "button" ? "Click Here"
+        : "",
+      settings: type === "pricing-url" ? { buttonColor: "#00B894", buttonText: "View Your Pricing" }
+        : type === "heading" ? { alignment: "center", fontSize: "large" }
+        : { alignment: "left" }
+    }
+    setEmailContentBlocks(prev => [...prev, newBlock])
+  }
+  
+  // Remove content block
+  const removeContentBlock = (id: string) => {
+    setEmailContentBlocks(prev => prev.filter(block => block.id !== id))
+  }
+  
+  // Update content block
+  const updateContentBlock = (id: string, updates: Partial<ContentBlock>) => {
+    setEmailContentBlocks(prev => prev.map(block => 
+      block.id === id ? { ...block, ...updates } : block
+    ))
+  }
+  
+  // Move content block
+  const moveContentBlock = (id: string, direction: "up" | "down") => {
+    const index = emailContentBlocks.findIndex(block => block.id === id)
+    if (direction === "up" && index > 0) {
+      const newBlocks = [...emailContentBlocks]
+      ;[newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]]
+      setEmailContentBlocks(newBlocks)
+    } else if (direction === "down" && index < emailContentBlocks.length - 1) {
+      const newBlocks = [...emailContentBlocks]
+      ;[newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]]
+      setEmailContentBlocks(newBlocks)
+    }
+  }
+  
+  // Send test email
+  const handleSendTestEmail = () => {
+    if (!testEmailAddress) return
+    setIsSendingTest(true)
+    setTimeout(() => {
+      setIsSendingTest(false)
+      setTestSent(true)
+      setTimeout(() => setTestSent(false), 3000)
+    }, 1500)
+  }
+
+  // Save campaign content
+  const handleSaveContent = () => {
+    setIsSavingContent(true)
+    setTimeout(() => {
+      setSavedEmailContent([...emailContentBlocks])
+      setIsSavingContent(false)
+      setContentSaved(true)
+      setTimeout(() => setContentSaved(false), 3000)
+    }, 1000)
+  }
   
   // Client search state
   const [clientSearchQuery, setClientSearchQuery] = useState("")
@@ -1179,6 +1304,338 @@ export default function PricingCommunicationPage() {
                 </div>
               </Card>
 
+              {/* Campaign Content Builder Panel */}
+              {selectedCampaign && (
+                <Card className="mb-6 overflow-hidden">
+                  {/* Panel Header */}
+                  <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-accent/10 rounded-lg">
+                        <Mail className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Campaign Content Builder</h3>
+                        <p className="text-sm text-muted-foreground">Design your email template with dynamic content blocks</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Save Button */}
+                      {contentSaved ? (
+                        <Button className="gap-2 bg-green-600 hover:bg-green-600" disabled>
+                          <CheckCircle className="h-4 w-4" />
+                          Saved
+                        </Button>
+                      ) : (
+                        <Button 
+                          className="gap-2"
+                          onClick={handleSaveContent}
+                          disabled={isSavingContent}
+                        >
+                          {isSavingContent ? (
+                            <>
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              Save Content
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Validation Warnings */}
+                  {!hasPricingUrlToken && (
+                    <div className="mx-4 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-amber-800 text-sm">Missing Customer Pricing URL</p>
+                        <p className="text-xs text-amber-600">Add a &quot;Customer Pricing URL&quot; block to include personalized pricing links for each recipient.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-4">
+                      <div className="grid grid-cols-12 gap-4">
+                        {/* Available Blocks Sidebar */}
+                        <div className="col-span-3">
+                          <div className="sticky top-4">
+                            <h4 className="text-sm font-semibold text-foreground mb-3">Content Blocks</h4>
+                            <p className="text-xs text-muted-foreground mb-3">Click to add to your email</p>
+                            <div className="space-y-2">
+                              {availableBlocks.map((block) => (
+                                <button
+                                  key={block.type}
+                                  onClick={() => addContentBlock(block.type as ContentBlock["type"])}
+                                  className={`w-full p-3 border rounded-lg text-left hover:border-accent hover:bg-accent/5 transition-colors group ${
+                                    block.type === "pricing-url" ? "border-accent/50 bg-accent/5" : ""
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <block.icon className={`h-4 w-4 ${block.type === "pricing-url" ? "text-accent" : "text-muted-foreground group-hover:text-accent"}`} />
+                                    <span className={`text-sm font-medium ${block.type === "pricing-url" ? "text-accent" : ""}`}>{block.label}</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">{block.description}</p>
+                                  {block.type === "pricing-url" && (
+                                    <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-medium bg-accent text-white rounded-full">Dynamic Token</span>
+                                  )}
+                                  {block.type === "customer-name" && (
+                                    <span className="inline-block mt-2 px-2 py-0.5 text-[10px] font-medium bg-blue-500 text-white rounded-full">Dynamic Token</span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+
+                            {/* Audience Selection */}
+                            <div className="mt-6 pt-4 border-t">
+                              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Select Audience
+                              </h4>
+                              <div className="space-y-2">
+                                {audienceSegments.map((segment) => (
+                                  <button
+                                    key={segment.id}
+                                    onClick={() => setSelectedAudience(segment.id)}
+                                    className={`w-full p-3 border rounded-lg text-left transition-colors ${
+                                      selectedAudience === segment.id
+                                        ? "border-accent bg-accent/5 ring-1 ring-accent"
+                                        : "hover:border-accent/50"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm font-medium">{segment.name}</span>
+                                      <span className="text-xs text-muted-foreground">{segment.count}</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{segment.description}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Email Editor */}
+                        <div className="col-span-9">
+                          <div className="border rounded-lg bg-white">
+                            {/* Email Header */}
+                            <div className="p-4 border-b bg-gray-50">
+                              <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground w-16">From:</span>
+                                  <span className="text-foreground">Albion Pricing Team &lt;pricing@albion.co.uk&gt;</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground w-16">To:</span>
+                                  <span className="text-foreground">
+                                    {selectedAudience 
+                                      ? audienceSegments.find(s => s.id === selectedAudience)?.name 
+                                      : "Select an audience"
+                                    }
+                                    {selectedAudience && (
+                                      <span className="text-muted-foreground ml-1">
+                                        ({audienceSegments.find(s => s.id === selectedAudience)?.count} recipients)
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground w-16">Subject:</span>
+                                  <input 
+                                    type="text" 
+                                    defaultValue={selectedCampaign.subject}
+                                    className="flex-1 px-2 py-1 border rounded text-foreground bg-background"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Content Blocks Editor */}
+                            <div className="p-6 min-h-[400px] space-y-3">
+                              {emailContentBlocks.map((block, index) => (
+                                <div
+                                  key={block.id}
+                                  className="group relative border border-dashed border-transparent hover:border-accent/50 rounded-lg p-2 -m-2 transition-colors"
+                                >
+                                  {/* Block Controls */}
+                                  <div className="absolute -left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                      onClick={() => moveContentBlock(block.id, "up")}
+                                      disabled={index === 0}
+                                      className="p-1 rounded hover:bg-muted disabled:opacity-30"
+                                    >
+                                      <ChevronDown className="h-4 w-4 rotate-180" />
+                                    </button>
+                                    <button 
+                                      onClick={() => moveContentBlock(block.id, "down")}
+                                      disabled={index === emailContentBlocks.length - 1}
+                                      className="p-1 rounded hover:bg-muted disabled:opacity-30"
+                                    >
+                                      <ChevronDown className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                  <div className="absolute -right-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                      onClick={() => removeContentBlock(block.id)}
+                                      className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+
+                                  {/* Block Content */}
+                                  {block.type === "heading" && (
+                                    <input
+                                      type="text"
+                                      value={block.content}
+                                      onChange={(e) => updateContentBlock(block.id, { content: e.target.value })}
+                                      className={`w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 ${
+                                        block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
+                                      }`}
+                                    />
+                                  )}
+                                  {block.type === "text" && (
+                                    <textarea
+                                      value={block.content}
+                                      onChange={(e) => updateContentBlock(block.id, { content: e.target.value })}
+                                      rows={2}
+                                      className={`w-full bg-transparent border-none outline-none focus:ring-0 resize-none text-muted-foreground ${
+                                        block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
+                                      }`}
+                                    />
+                                  )}
+                                  {block.type === "pricing-url" && (
+                                    <div className="text-center py-4">
+                                      <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-white font-medium" style={{ backgroundColor: block.settings?.buttonColor || "#00B894" }}>
+                                        <Link2 className="h-4 w-4" />
+                                        {block.settings?.buttonText || "View Your Pricing"}
+                                      </div>
+                                      <p className="text-xs text-accent mt-2 flex items-center justify-center gap-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        Dynamic: Links to each customer&apos;s unique pricing page
+                                      </p>
+                                    </div>
+                                  )}
+                                  {block.type === "customer-name" && (
+                                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium">
+                                      {"{{customer_name}}"}
+                                    </span>
+                                  )}
+                                  {block.type === "divider" && (
+                                    <hr className="border-t border-gray-200 my-4" />
+                                  )}
+                                  {block.type === "pricing-table" && (
+                                    <div className="border rounded-lg overflow-hidden">
+                                      <div className="bg-gray-100 px-4 py-2 text-xs font-medium text-gray-600">
+                                        Sample Pricing Preview (from uploaded data)
+                                      </div>
+                                      <table className="w-full text-sm">
+                                        <thead className="bg-gray-50">
+                                          <tr>
+                                            <th className="px-4 py-2 text-left font-medium text-gray-600">Product</th>
+                                            <th className="px-4 py-2 text-right font-medium text-gray-600">Current</th>
+                                            <th className="px-4 py-2 text-right font-medium text-gray-600">New</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {ingestedData.slice(0, 3).map((item, idx) => (
+                                            <tr key={idx} className="border-t">
+                                              <td className="px-4 py-2">{item.code}</td>
+                                              <td className="px-4 py-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                              <td className="px-4 py-2 text-right font-medium text-accent">£{item.newPrice.toFixed(2)}</td>
+                                            </tr>
+                                          ))}
+                                          {ingestedData.length === 0 && (
+                                            <tr>
+                                              <td colSpan={3} className="px-4 py-4 text-center text-muted-foreground">
+                                                Upload pricing data to see preview
+                                              </td>
+                                            </tr>
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                  {block.type === "button" && (
+                                    <div className="text-center py-2">
+                                      <button className="px-6 py-2 bg-accent text-white rounded-lg font-medium">
+                                        {block.content}
+                                      </button>
+                                    </div>
+                                  )}
+                                  {block.type === "image" && (
+                                    <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
+                                      <Image className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                                      <p className="text-sm text-muted-foreground">Click to upload image</p>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+
+                              {emailContentBlocks.length === 0 && (
+                                <div className="text-center py-12 text-muted-foreground">
+                                  <Mail className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                  <p>Add content blocks from the sidebar to build your email</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Test Send Section */}
+                          <div className="mt-4 p-4 border rounded-lg bg-muted/30">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <TestTube className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <h4 className="text-sm font-semibold text-foreground">Send Test Email</h4>
+                                  <p className="text-xs text-muted-foreground">Preview how the email will look with sample data</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="email"
+                                  placeholder="Enter test email address"
+                                  value={testEmailAddress}
+                                  onChange={(e) => setTestEmailAddress(e.target.value)}
+                                  className="w-64"
+                                />
+                                {testSent ? (
+                                  <Button variant="outline" className="gap-2 text-green-600 border-green-200" disabled>
+                                    <CheckCircle className="h-4 w-4" />
+                                    Test Sent
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    variant="outline" 
+                                    className="gap-2"
+                                    onClick={handleSendTestEmail}
+                                    disabled={!testEmailAddress || isSendingTest}
+                                  >
+                                    {isSendingTest ? (
+                                      <>
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                        Sending...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Send className="h-4 w-4" />
+                                        Send Test
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                </Card>
+              )}
+
               {/* Campaign Preview */}
               {selectedCampaign && (
                 <Card className="p-6 mb-6">
@@ -1275,55 +1732,133 @@ export default function PricingCommunicationPage() {
                           </div>
                         </div>
 
-                        <h2 className="text-xl font-semibold text-foreground mb-4">Updated Pricing Schedule</h2>
-                        
-                        <p className="text-muted-foreground mb-4">
-                          Dear Valued Customer,
-                        </p>
-                        
-                        <p className="text-muted-foreground mb-4">
-                          {selectedCampaign.previewText}. Below you will find a summary of the updated prices for your reference.
-                        </p>
+                        {/* Render saved content blocks or default content */}
+                        {savedEmailContent ? (
+                          <>
+                            {savedEmailContent.map((block) => (
+                              <div key={block.id} className="mb-4">
+                                {block.type === "heading" && (
+                                  <h2 className={`text-xl font-semibold text-foreground ${
+                                    block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
+                                  }`}>
+                                    {block.content}
+                                  </h2>
+                                )}
+                                {block.type === "text" && (
+                                  <p className={`text-muted-foreground whitespace-pre-wrap ${
+                                    block.settings?.alignment === "center" ? "text-center" : block.settings?.alignment === "right" ? "text-right" : "text-left"
+                                  }`}>
+                                    {block.content.replace("{{customer_name}}", "Valued Customer")}
+                                  </p>
+                                )}
+                                {block.type === "pricing-url" && (
+                                  <div className="text-center py-4">
+                                    <div 
+                                      className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-white font-medium"
+                                      style={{ backgroundColor: block.settings?.buttonColor || "#00B894" }}
+                                    >
+                                      {block.settings?.buttonText || "View Your Pricing"}
+                                    </div>
+                                    <p className="text-xs text-accent mt-2">Dynamic link to customer pricing page</p>
+                                  </div>
+                                )}
+                                {block.type === "customer-name" && (
+                                  <span className="font-medium text-foreground">{"{{customer_name}}"}</span>
+                                )}
+                                {block.type === "divider" && (
+                                  <hr className="border-t border-muted my-4" />
+                                )}
+                                {block.type === "pricing-table" && ingestedData.length > 0 && (
+                                  <div className="my-4 border rounded overflow-hidden">
+                                    <table className="w-full text-sm">
+                                      <thead>
+                                        <tr className="bg-muted/50">
+                                          <th className="text-left p-2 font-medium">Product</th>
+                                          <th className="text-right p-2 font-medium">Current</th>
+                                          <th className="text-right p-2 font-medium">New</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {ingestedData.slice(0, 5).map((item) => (
+                                          <tr key={item.id} className="border-t">
+                                            <td className="p-2 font-mono text-xs">{item.code}</td>
+                                            <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                            <td className="p-2 text-right font-medium text-accent">£{item.newPrice.toFixed(2)}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                    {ingestedData.length > 5 && (
+                                      <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
+                                        + {ingestedData.length - 5} more items
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {block.type === "button" && (
+                                  <div className="text-center py-2">
+                                    <div className="inline-block px-6 py-2 bg-accent text-white rounded-lg font-medium">
+                                      {block.content}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <>
+                            {/* Default preview content when no saved content */}
+                            <h2 className="text-xl font-semibold text-foreground mb-4">Updated Pricing Schedule</h2>
+                            
+                            <p className="text-muted-foreground mb-4">
+                              Dear Valued Customer,
+                            </p>
+                            
+                            <p className="text-muted-foreground mb-4">
+                              {selectedCampaign.previewText}. Below you will find a summary of the updated prices for your reference.
+                            </p>
 
-                        {/* Sample pricing table in email */}
-                        {ingestedData.length > 0 && (
-                          <div className="my-6 border rounded overflow-hidden">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="bg-muted/50">
-                                  <th className="text-left p-2 font-medium">Product</th>
-                                  <th className="text-right p-2 font-medium">Current</th>
-                                  <th className="text-right p-2 font-medium">New</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {ingestedData.slice(0, 5).map((item) => (
-                                  <tr key={item.id} className="border-t">
-                                    <td className="p-2 font-mono text-xs">{item.code}</td>
-                                    <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
-                                    <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                            {ingestedData.length > 5 && (
-                              <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
-                                + {ingestedData.length - 5} more items
+                            {/* Sample pricing table in email */}
+                            {ingestedData.length > 0 && (
+                              <div className="my-6 border rounded overflow-hidden">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="bg-muted/50">
+                                      <th className="text-left p-2 font-medium">Product</th>
+                                      <th className="text-right p-2 font-medium">Current</th>
+                                      <th className="text-right p-2 font-medium">New</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {ingestedData.slice(0, 5).map((item) => (
+                                      <tr key={item.id} className="border-t">
+                                        <td className="p-2 font-mono text-xs">{item.code}</td>
+                                        <td className="p-2 text-right">£{item.currentPrice.toFixed(2)}</td>
+                                        <td className="p-2 text-right font-medium">£{item.newPrice.toFixed(2)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                                {ingestedData.length > 5 && (
+                                  <div className="text-center py-2 bg-muted/30 text-xs text-muted-foreground">
+                                    + {ingestedData.length - 5} more items
+                                  </div>
+                                )}
                               </div>
                             )}
-                          </div>
+
+                            <p className="text-muted-foreground mb-4">
+                              These prices will be effective from <strong>{ingestedData[0]?.liveDate || "the scheduled date"}</strong>. Please contact us if you have any questions.
+                            </p>
+
+                            <p className="text-muted-foreground mb-2">
+                              Best regards,
+                            </p>
+                            <p className="text-muted-foreground font-medium">
+                              The Albion Pricing Team
+                            </p>
+                          </>
                         )}
-
-                        <p className="text-muted-foreground mb-4">
-                          These prices will be effective from <strong>{ingestedData[0]?.liveDate || "the scheduled date"}</strong>. Please contact us if you have any questions.
-                        </p>
-
-                        <p className="text-muted-foreground mb-2">
-                          Best regards,
-                        </p>
-                        <p className="text-muted-foreground font-medium">
-                          The Albion Pricing Team
-                        </p>
 
                         {/* Footer */}
                         <div className="mt-8 pt-4 border-t text-center text-xs text-muted-foreground">
